@@ -1,0 +1,7 @@
+playwright
+langchain
+langgraph
+langchain-groq
+chromadb
+python-dotenv
+browser-use
