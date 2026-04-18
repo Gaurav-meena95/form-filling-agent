@@ -1,4 +1,4 @@
-v.env
+.env
 venv/
 node_modules/
 backend/user_data/
