@@ -6,10 +6,11 @@ from dotenv import load_dotenv
 import os
 import json
 
-load_dotenv()
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
 
 # Connect to existing ChromaDB
-client = chromadb.PersistentClient(path="./data/user_profiles")
+_base_dir = os.path.dirname(os.path.abspath(__file__))
+client = chromadb.PersistentClient(path=os.path.join(_base_dir, "..", "data", "user_profiles"))
 embedding_fn = embedding_functions.DefaultEmbeddingFunction()
 collection = client.get_or_create_collection(
     name="user_profile",
@@ -31,7 +32,7 @@ def retrieve_and_match(form_fields: list) -> dict:
             query_texts=[field],
             n_results=1
         )
-        if result["documents"][0]:
+        if result.get("documents") and len(result["documents"]) > 0 and result["documents"][0]:
             retrieved_info.append(result["documents"][0][0])
     
     relevant_info = "\n".join(retrieved_info)
@@ -39,20 +40,34 @@ def retrieve_and_match(form_fields: list) -> dict:
     
     # Step 2 - LLM matches retrieved info with form fields
     prompt = ChatPromptTemplate.from_template("""
-    You are a form filling assistant.
+    You are an intelligent form filling assistant helping a job applicant.
     
-    Information retrieved from user database:
+    Complete user profile from resume:
     {relevant_info}
     
     Form fields to fill:
     {fields}
     
-    Rules:
-    - Only fill fields where you have confident matching data
-    - If data for a field is missing or uncertain, use null
+    Instructions:
+    - For name, email, phone: extract directly from profile
+    - For qualification: include degree, college, grade
+    - For experience questions: write 3-4 professional sentences based on their skills and projects
+    - For "approach to testing" type questions: write a thoughtful answer based on their background
+    - For Yes/No availability: return exactly "Yes"
+    - For stipend: return "15000"
+    - For notice period: return "Immediate"
+    - For file upload fields like "Resume": return null
+    - For radio/multiple choice fields you are unsure about: return null
     - Return ONLY a valid JSON object, nothing else
     
-    Example: {{"Full Name": "John Doe", "Email": null, "City": "Delhi"}}
+    Example:
+    {{
+      "Full Name": "Gaurav Meena",
+      "Do you have experience?": "Yes, I have worked as a Frontend Developer Intern at Gistly AI where I built reusable components and fixed bugs following professional standards.",
+      "Expected monthly stipend": "15000",
+      "Notice Period": "Immediate",
+      "Resume": null
+    }}
     """)
     
     chain = prompt | llm
@@ -63,9 +78,17 @@ def retrieve_and_match(form_fields: list) -> dict:
     
     # Parse JSON safely
     raw = response.content.strip()
-    start = raw.find("{")
-    end = raw.rfind("}") + 1
-    data = json.loads(raw[start:end])
+    try:
+        start = raw.find("{")
+        end = raw.rfind("}") + 1
+        if start == -1 or end == 0:
+            print(f"Error: No JSON found in LLM response: {raw}")
+            return {}
+        data = json.loads(raw[start:end])
+    except Exception as e:
+        print(f"Failed to parse LLM response as JSON: {e}")
+        print(f"Raw response: {raw}")
+        return {}
     
     # Remove null values - only keep matched fields
     matched = {k: v for k, v in data.items() if v is not None}

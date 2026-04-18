@@ -1,5 +1,6 @@
 import React from 'react';
 import UploadResume from './UploadResume';
+import ManualProfile from './ManualProfile';
 import RunAgent from './RunAgent';
 import { Bot, Zap, Shield, Sparkles } from 'lucide-react';
 
@@ -34,7 +35,10 @@ function App() {
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-24">
-        <UploadResume />
+        <div className="flex flex-col gap-8">
+          <UploadResume />
+          <ManualProfile />
+        </div>
         <RunAgent />
       </div>
 

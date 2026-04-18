@@ -1,8 +1,9 @@
 from langgraph.graph import StateGraph, END
-from typing import TypedDict, List, Dict
-from src.form_detector import detect_form_fields
-from src.rag_retriever import retrieve_and_match
-from src.form_filler import fill_form
+from typing import TypedDict, List, Dict, Any
+from backend.src.form_detector import detect_form_fields
+from backend.src.rag_retriever import retrieve_and_match
+from backend.src.form_filler import fill_form
+from backend.src.browser_manager import BrowserManager
 
 # State that flows through all nodes
 class AgentState(TypedDict):
@@ -10,23 +11,29 @@ class AgentState(TypedDict):
     detected_fields: List[str]
     matched_data: Dict[str, str]
     status: str
+    page: Any # Playwright Page object
 
 # Node 1 - Detect form fields
-def detect_fields_node(state: AgentState) -> AgentState:
+async def detect_fields_node(state: AgentState) -> AgentState:
     print("\n[Node 1] Detecting form fields...")
-    fields = detect_form_fields(state["form_url"])
-    return {**state, "detected_fields": fields, "status": "fields_detected"}
+    
+    # Get shareable browser context and open a new tab in the same window
+    manager = await BrowserManager.get_instance()
+    page = await manager.get_page()
+    
+    fields = await detect_form_fields(page, state["form_url"])
+    return {**state, "detected_fields": fields, "page": page, "status": "fields_detected"}
 
 # Node 2 - Retrieve and match from ChromaDB
-def match_fields_node(state: AgentState) -> AgentState:
+async def match_fields_node(state: AgentState) -> AgentState:
     print("\n[Node 2] Matching fields with ChromaDB...")
     matched = retrieve_and_match(state["detected_fields"])
     return {**state, "matched_data": matched, "status": "fields_matched"}
 
 # Node 3 - Fill form and wait for user
-def fill_form_node(state: AgentState) -> AgentState:
+async def fill_form_node(state: AgentState) -> AgentState:
     print("\n[Node 3] Filling form...")
-    fill_form(state["form_url"], state["matched_data"], state["detected_fields"])
+    await fill_form(state["page"], state["form_url"], state["matched_data"], state["detected_fields"])
     return {**state, "status": "completed"}
 
 # Build LangGraph

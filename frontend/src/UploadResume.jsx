@@ -21,7 +21,7 @@ const UploadResume = () => {
     formData.append('file', file);
 
     try {
-      await axios.post('http://localhost:8000/upload-resume', formData);
+      await axios.post(`${import.meta.env.VITE_API_URL}/upload-resume`, formData);
       setStatus('success');
     } catch (error) {
       console.error('Upload failed:', error);
@@ -51,8 +51,8 @@ const UploadResume = () => {
         </div>
       </label>
 
-      <button 
-        className="btn-primary w-full" 
+      <button
+        className="btn-primary w-full"
         onClick={uploadResume}
         disabled={!file || uploading}
       >

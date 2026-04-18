@@ -4,7 +4,10 @@ from pypdf import PdfReader
 import os
 
 # Initialize ChromaDB
-client = chromadb.PersistentClient(path="./data/user_profiles")
+_base_dir = os.path.dirname(os.path.abspath(__file__))
+_db_path = os.path.join(_base_dir, "..", "data", "user_profiles")
+os.makedirs(_db_path, exist_ok=True)
+client = chromadb.PersistentClient(path=_db_path)
 embedding_fn = embedding_functions.DefaultEmbeddingFunction()
 collection = client.get_or_create_collection(
     name="user_profile",
