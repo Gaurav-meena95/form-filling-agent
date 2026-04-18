@@ -16,16 +16,16 @@ def fill_form():
         page.goto(FORM_URL)
         print("Form khul gaya!")
         
-        # Google Form fully load hone do
+
         page.wait_for_timeout(3000)
         
-        # Google Form ka actual selector ye hota hai
+
         inputs = page.query_selector_all('div[role="listitem"] input')
         print(f"Kitne fields mile: {len(inputs)}")
         
         if len(inputs) == 0:
             print("Koi field nahi mila - selectors check karte hain")
-            # Page ka HTML print karo debug ke liye
+
             all_inputs = page.query_selector_all('input')
             print(f"Total inputs on page: {len(all_inputs)}")
         
