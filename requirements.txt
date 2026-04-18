@@ -2,6 +2,9 @@ playwright
 langchain
 langgraph
 langchain-groq
+langchain-community
 chromadb
 python-dotenv
-browser-use
+fastapi
+uvicorn
+pypdf
