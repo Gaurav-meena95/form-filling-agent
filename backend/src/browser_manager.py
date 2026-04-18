@@ -29,7 +29,7 @@ class BrowserManager:
         print("Launching persistent browser...")
         self.context = await self.playwright.chromium.launch_persistent_context(
             user_data_dir=self.user_data_dir,
-            headless=False,
+            headless=True,
             args=[
                 "--no-sandbox",
                 "--disable-blink-features=AutomationControlled",
