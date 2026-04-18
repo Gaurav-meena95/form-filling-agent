@@ -1,6 +1,7 @@
 from playwright.sync_api import sync_playwright
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
+from profile_store import store_profile, retrieve_relevant_info
 from dotenv import load_dotenv
 import os
 import json
@@ -9,16 +10,21 @@ load_dotenv()
 
 FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdOMBMwJcpqw8MUADwN-Njaf4C_8alqoJ2a64omYcZ_z6BYQA/viewform"
 
-user_profile = """
-i am gaurav meena.
-I live in Sonipat.
-My email is gaurav@example.com.
-number 7724014495 
-"""
 
-form_fields = ["Email","Full Name", "City","number"]
+user_profile = {
+    "Full Name": "Gaurav Meena",
+    "Email": "gaurav@example.com",
+    "City": "Sonipat",
+    "Phone": "9876543210",
+    "College": "MDU Rohtak",
+    "Year": "2nd Year",
+    "Branch": "Computer Science"
+}
 
-def get_data_from_llm(profile, fields):
+
+form_fields = ["Full Name", "Email", "City","number"]
+
+def get_data_from_llm(relevant_info, fields):
     llm = ChatGroq(
         api_key=os.getenv("GROQ_API_KEY"),
         model="llama-3.3-70b-versatile"
@@ -27,13 +33,13 @@ def get_data_from_llm(profile, fields):
     prompt = ChatPromptTemplate.from_template("""
     You are a form filling assistant.
     
-    User details:
-    {profile}
+    Relevant user information retrieved from database:
+    {relevant_info}
     
     Form has exactly these fields:
     {fields}
     
-    Extract the correct value for each field from user details.
+    Extract the correct value for each field.
     Return ONLY a JSON object, nothing else, no extra fields.
     
     Example: {{"Full Name": "John Doe", "Email": "john@example.com", "City": "Delhi"}}
@@ -41,7 +47,7 @@ def get_data_from_llm(profile, fields):
     
     chain = prompt | llm
     response = chain.invoke({
-        "profile": profile,
+        "relevant_info": relevant_info,
         "fields": ", ".join(fields)
     })
     
@@ -73,9 +79,16 @@ def fill_form(data):
         print("Done!")
 
 # Main flow
-print("Getting data from LLM...")
-data = get_data_from_llm(user_profile, form_fields)
+print("Step 1: Storing profile in ChromaDB...")
+store_profile(user_profile)
+
+print("\nStep 2: Retrieving relevant info from database...")
+relevant_info = retrieve_relevant_info(form_fields)
+print(f"Retrieved:\n{relevant_info}")
+
+print("\nStep 3: Getting structured data from LLM...")
+data = get_data_from_llm(relevant_info, form_fields)
 print(f"LLM decided: {data}")
 
-print("\nFilling form...")
+print("\nStep 4: Filling form...")
 fill_form(data)
