@@ -1,6 +1,4 @@
-playwright
 langchain
-langgraph
 langchain-groq
 langchain-community
 chromadb
@@ -9,3 +7,4 @@ fastapi
 uvicorn
 pypdf
 python-multipart
+beautifulsoup4

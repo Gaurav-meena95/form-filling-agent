@@ -23,45 +23,42 @@ def extract_text_from_pdf(pdf_path: str) -> str:
     return text
 
 def store_from_pdf(pdf_path: str):
-    """Extract text from PDF and store in ChromaDB"""
+    """Extract text from PDF and ADD to existing ChromaDB - never delete old data"""
     print(f"Reading PDF: {pdf_path}")
     text = extract_text_from_pdf(pdf_path)
     
-    # Store entire resume as one document
-    existing = collection.get()
-    if existing["ids"]:
-        collection.delete(ids=existing["ids"])
+    # Generate unique ID based on filename and timestamp
+    import time
+    file_id = f"resume_{os.path.basename(pdf_path)}_{int(time.time())}"
     
+    # DON'T delete existing data - just add new resume
     collection.add(
         documents=[text],
-        ids=["resume"],
-        metadatas=[{"source": "pdf"}]
+        ids=[file_id],
+        metadatas=[{"source": "pdf", "filename": os.path.basename(pdf_path)}]
     )
-    print("PDF content stored in ChromaDB!")
+    print(f"PDF content added to ChromaDB! Total documents: {collection.count()}")
 
 def store_from_manual(profile_data: dict):
-    """Store manually typed user profile in ChromaDB"""
+    """Store manually typed user profile in ChromaDB - never delete old data"""
+    import time
     documents = []
     ids = []
     metadatas = []
 
+    timestamp = int(time.time())
     for key, value in profile_data.items():
         documents.append(f"{key}: {value}")
-        ids.append(key.lower().replace(" ", "_"))
+        ids.append(f"{key.lower().replace(' ', '_')}_{timestamp}")
         metadatas.append({"field": key, "value": value})
 
-    # Delete old data first
-    existing = collection.get()
-    if existing["ids"]:
-        collection.delete(ids=existing["ids"])
-
-    # Store new data
+    # DON'T delete existing data - just add new entries
     collection.add(
         documents=documents,
         ids=ids,
         metadatas=metadatas
     )
-    print(f"Manual profile stored! Total fields: {len(documents)}")
+    print(f"Manual profile added! Total documents: {collection.count()}")
 
 if __name__ == "__main__":
     # Test with manual data

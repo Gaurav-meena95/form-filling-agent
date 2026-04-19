@@ -25,48 +25,61 @@ llm = ChatGroq(
 def retrieve_and_match(form_fields: list) -> dict:
     """Retrieve relevant info from ChromaDB and match with form fields using LLM"""
     
-    # Step 1 - Retrieve relevant info for each field
-    retrieved_info = []
+    # Step 1 - Retrieve ALL stored profile data
+    retrieved_chunks = set()
+    
+    # 1. Broad query to get ALL stored documents
+    all_stored = collection.get()
+    all_docs = all_stored.get("documents", [])
+    if all_docs:
+        # Create a full context from all stored resumes and manual entries
+        full_context = "\n\n---\n\n".join([doc for doc in all_docs if doc])
+        retrieved_chunks.add(full_context)
+            
+    # 2. Semantic search for each form field for better accuracy
     for field in form_fields:
         result = collection.query(
             query_texts=[field],
-            n_results=1
+            n_results=3
         )
-        if result.get("documents") and len(result["documents"]) > 0 and result["documents"][0]:
-            retrieved_info.append(result["documents"][0][0])
+        if result.get("documents"):
+            for doc_list in result["documents"]:
+                for doc in doc_list:
+                    if doc: retrieved_chunks.add(doc)
     
-    relevant_info = "\n".join(retrieved_info)
-    print(f"Retrieved from ChromaDB:\n{relevant_info}")
+    relevant_info = "\n".join(list(retrieved_chunks))
+    print(f"Retrieved {len(retrieved_chunks)} unique chunks from ChromaDB")
     
     # Step 2 - LLM matches retrieved info with form fields
     prompt = ChatPromptTemplate.from_template("""
-    You are an intelligent form filling assistant helping a job applicant.
-    
-    Complete user profile from resume:
+    You are an intelligent job application form filling assistant.
+
+    Here is the candidate's complete resume data:
     {relevant_info}
-    
-    Form fields to fill:
+
+    The form has these fields that need to be filled:
     {fields}
-    
+
     Instructions:
-    - For name, email, phone: extract directly from profile
-    - For qualification: include degree, college, grade
-    - For experience questions: write 3-4 professional sentences based on their skills and projects
-    - For "approach to testing" type questions: write a thoughtful answer based on their background
-    - For Yes/No availability: return exactly "Yes"
-    - For stipend: return "15000"
-    - For notice period: return "Immediate"
-    - For file upload fields like "Resume": return null
-    - For radio/multiple choice fields you are unsure about: return null
-    - Return ONLY a valid JSON object, nothing else
-    
-    Example:
+    - Semantically match each field with the resume data even if names don't match exactly
+    - "Contact" = phone number, "University" = college name, "Organization" = company name
+    - For experience fields: write professional 3-4 sentence answers based on resume
+    - For "Have you built any app" type questions: describe projects from resume
+    - For "AI tools" questions: mention LangChain, LangGraph from skills
+    - For CTC/salary fields: write "Fresher - Not Applicable" if student
+    - For "Notice Period": write "Immediate"  
+    - For programming languages: list from skills section
+    - For achievements: summarize certifications and hackathons
+    - For file upload fields like "Resume" or "Updated Resume": return null
+    - Return ONLY a valid JSON object, no extra text
+
+    Example format:
     {{
       "Full Name": "Gaurav Meena",
-      "Do you have experience?": "Yes, I have worked as a Frontend Developer Intern at Gistly AI where I built reusable components and fixed bugs following professional standards.",
-      "Expected monthly stipend": "15000",
+      "Contact": "+917724014495",
+      "University": "Newton School of Technology, Rishihood University",
       "Notice Period": "Immediate",
-      "Resume": null
+      "Updated Resume": null
     }}
     """)
     
@@ -92,6 +105,6 @@ def retrieve_and_match(form_fields: list) -> dict:
     
     # Remove null values - only keep matched fields
     matched = {k: v for k, v in data.items() if v is not None}
-    print(f"Matched fields: {matched}")
+    print(f"Matched {len(matched)} fields successfully.")
     
     return matched

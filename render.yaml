@@ -1,11 +1,20 @@
 services:
   - type: web
-    name: form-filling-agent
-    runtime: python
-    buildCommand: pip install -r requirements.txt && playwright install chromium && playwright install-deps chromium
-    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    name: form-filling-agent-backend
+    runtime: docker
+    plan: free # Change to starter if you need more RAM
+    region: ohio
+    # Point to the Dockerfile in the backend folder
+    dockerFilePath: ./backend/Dockerfile
     envVars:
       - key: GROQ_API_KEY
-        sync: false
+        sync: false # Set this in the Render dashboard for security
+      - key: PORT
+        value: 3000
       - key: PYTHON_VERSION
         value: 3.11.0
+    # Optional: Enable disk for persistent login sessions (starts at $7/mo)
+    # disk:
+    #   name: user-data
+    #   mountPath: /app/backend/user_data
+    #   sizeGB: 1

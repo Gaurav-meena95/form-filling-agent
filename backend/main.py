@@ -1,32 +1,21 @@
-from fastapi import FastAPI, UploadFile, File, BackgroundTasks
+from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import shutil
 from backend.src.ingestion import store_from_pdf, store_from_manual
-from backend.src.agent import build_agent
+from backend.src.rag_retriever import retrieve_and_match
+from backend.src.form_filler import save_learned_answer
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 
-from contextlib import asynccontextmanager
-from backend.src.browser_manager import BrowserManager
+app = FastAPI()
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup: Initialize browser
-    await BrowserManager.get_instance()
-    yield
-    # Shutdown: Close browser
-    manager = await BrowserManager.get_instance()
-    await manager.close()
-
-app = FastAPI(lifespan=lifespan)
-
-# Enable CORS for frontend
+# Enable CORS for frontend and extension
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5174", "http://127.0.0.1:5174"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -35,21 +24,16 @@ app.add_middleware(
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-class AgentRequest(BaseModel):
-    url: str
+class MatchFieldsRequest(BaseModel):
+    fields: list[str]
+
+class LearnRequest(BaseModel):
+    field: str
+    value: str
 
 @app.get("/")
 async def root():
-    return {"message": "Form Filling Agent API is running"}
-
-@app.get("/browser-status")
-async def browser_status():
-    print("DEBUG: /browser-status endpoint hit")
-    manager = await BrowserManager.get_instance()
-    return {
-        "is_connected": manager.is_connected,
-        "mode": "live" if manager.is_connected else "isolated"
-    }
+    return {"message": "AutoFill AI API is running"}
 
 @app.post("/upload-resume")
 async def upload_resume(file: UploadFile = File(...)):
@@ -68,28 +52,23 @@ async def manual_profile(data: dict):
     store_from_manual(data)
     return {"message": "Manual profile stored successfully"}
 
-@app.post("/run-agent")
-async def run_agent(request: AgentRequest):
+@app.post("/match-fields")
+async def match_fields(request: MatchFieldsRequest):
+    """Query RAG to match values for detected fields"""
     try:
-        print(f"Received request to run agent for URL: {request.url}")
-        agent = build_agent()
-        
-        initial_state = {
-            "form_url": request.url,
-            "detected_fields": [],
-            "matched_data": {},
-            "status": "starting",
-            "page": None
-        }
-        
-        # Run agent flow
-        result = await agent.ainvoke(initial_state)
-        return {"status": result["status"], "message": "Agent finished execution"}
+        matched = retrieve_and_match(request.fields)
+        return {"matched": matched}
     except Exception as e:
-        import traceback
-        error_detail = traceback.format_exc()
-        print(f"CRITICAL ERROR in run_agent:\n{error_detail}")
-        return {"status": "error", "message": f"Agent failed: {str(e)}", "detail": error_detail}
+        return {"matched": {}, "error": str(e)}
+
+@app.post("/learn")
+async def learn_from_user(request: LearnRequest):
+    """Save user-filled value for future use"""
+    try:
+        save_learned_answer(request.field, request.value)
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 if __name__ == "__main__":
     import uvicorn
