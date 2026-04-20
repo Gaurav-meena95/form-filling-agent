@@ -157,11 +157,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Step 3: Fill
       updateStep('step-fill', 'active');
 
-      // Re-inject content.js to make sure it's fresh
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        files: ['content.js']
-      });
+      // Wait for injection to complete
       await new Promise(resolve => setTimeout(resolve, 500));
 
       let fillResult;

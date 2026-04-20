@@ -5,6 +5,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from dotenv import load_dotenv
 import os
 import json
+from backend.src.form_filler import load_learned_answers
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
 
@@ -48,44 +49,64 @@ def retrieve_and_match(form_fields: list) -> dict:
                     if doc: retrieved_chunks.add(doc)
     
     relevant_info = "\n".join(list(retrieved_chunks))
-    print(f"Retrieved {len(retrieved_chunks)} unique chunks from ChromaDB")
+    
+    # 3. Add Learned Answers (High Priority)
+    learned = load_learned_answers()
+    learned_context = ""
+    if learned:
+        learned_context = "\n\n### USER'S PREVIOUSLY CORRECTED ANSWERS (HIGH PRIORITY):\n"
+        for field, val in learned.items():
+            learned_context += f"- {field}: {val}\n"
+    
+    final_context = relevant_info + learned_context
+    print(f"Retrieved {len(retrieved_chunks)} unique chunks from ChromaDB and {len(learned)} learned answers.")
     
     # Step 2 - LLM matches retrieved info with form fields
     prompt = ChatPromptTemplate.from_template("""
-    You are an intelligent job application form filling assistant.
+    You are an intelligent job application assistant filling a form for the candidate.
 
-    Here is the candidate's complete resume data:
+    Complete candidate profile:
     {relevant_info}
 
-    The form has these fields that need to be filled:
+    Form fields to fill:
     {fields}
 
-    Instructions:
-    - Semantically match each field with the resume data even if names don't match exactly
-    - "Contact" = phone number, "University" = college name, "Organization" = company name
-    - For experience fields: write professional 3-4 sentence answers based on resume
-    - For "Have you built any app" type questions: describe projects from resume
-    - For "AI tools" questions: mention LangChain, LangGraph from skills
-    - For CTC/salary fields: write "Fresher - Not Applicable" if student
-    - For "Notice Period": write "Immediate"  
-    - For programming languages: list from skills section
-    - For achievements: summarize certifications and hackathons
-    - For file upload fields like "Resume" or "Updated Resume": return null
-    - Return ONLY a valid JSON object, no extra text
+    Field mapping rules (apply these strictly):
+    - "Current City" or "City" = extract city from address/location in resume
+    - "Current role title" or "Role" = most recent job title from internships
+    - "Total years of experience" = count from internship dates, return NUMBER ONLY (e.g. "1")
+    - "Years of experience with NodeJS" = check skills, if not mentioned return "0"  
+    - "Expected annual CTC" or "Expected CTC" = "8-12 LPA" for freshers
+    - "Link to resume" or "Resume link" = null (cannot provide)
+    - "LinkedIn profile" or "LinkedIn" = extract LinkedIn URL if present in resume
+    - "Makes you right fit" = write 3-4 sentences about relevant skills and projects
+    - "AI agents experience" = mention LangChain, LangGraph projects specifically
+    - "How quickly can you join" or "Notice period" = "Immediate"
+    - "Referred by" = null
+    - "Applied previously" = "No"
+    - "Additional notes" = null
+    - "Remote setup" = "Very comfortable"
+    - For radio button options like "Very comfortable (Remote preference)" = return null, handle separately
+    - For YES/NO questions about previous application = "No"
 
-    Example format:
+    Return ONLY valid JSON, no extra text.
+    Example:
     {{
       "Full Name": "Gaurav Meena",
-      "Contact": "+917724014495",
-      "University": "Newton School of Technology, Rishihood University",
-      "Notice Period": "Immediate",
-      "Updated Resume": null
+      "Current City": "Sonipat",
+      "Current role title": "Web Developer Intern",
+      "Total years of experience": "1",
+      "Years of experience with NodeJS": "1",
+      "Expected annual CTC": "8-12",
+      "Makes you right fit": "I am a full-stack developer...",
+      "How quickly can you join": "Immediate",
+      "Applied previously": "No"
     }}
     """)
     
     chain = prompt | llm
     response = chain.invoke({
-        "relevant_info": relevant_info,
+        "relevant_info": final_context,
         "fields": ", ".join(form_fields)
     })
     

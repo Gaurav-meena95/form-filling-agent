@@ -69,7 +69,7 @@ async def learn_from_user(request: LearnRequest):
         return {"status": "success"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
-
+        
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", 3000))
