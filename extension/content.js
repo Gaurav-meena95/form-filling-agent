@@ -1,169 +1,216 @@
-// const BACKEND_URL = 'http://localhost:3000';
+// Universal Form Filling Agent - content.js
 if (typeof BACKEND_URL === 'undefined') { var BACKEND_URL = 'http://localhost:3000'; }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'GET_HTML') {
-    // Don't send full HTML - extract only field labels directly
-    const fields = [];
-    
-    // Google Forms labels
-    document.querySelectorAll('.M7eMe').forEach(el => {
-      const text = el.innerText.trim().replace('*', '').trim();
-      if (text) fields.push(text);
-    });
-    
-    // Generic form labels fallback
-    if (fields.length === 0) {
-      document.querySelectorAll('label').forEach(el => {
-        const text = el.innerText.trim();
-        if (text) fields.push(text);
-      });
-    }
-    
-    // aria-label fallback
-    if (fields.length === 0) {
-      document.querySelectorAll('input[aria-label], textarea[aria-label]').forEach(el => {
-        const text = el.getAttribute('aria-label').trim();
-        if (text) fields.push(text);
-      });
-    }
-    
-    // Remove duplicates
-    const uniqueFields = [...new Set(fields)];
-    sendResponse({ html: JSON.stringify(uniqueFields), fields: uniqueFields });
+    const fields = detectFields();
+    // We send back both the unique labels and the count
+    const uniqueLabels = [...new Set(fields.map(f => f.label))];
+    sendResponse({ fields: uniqueLabels, rawFields: fields });
     return true;
   }
 
   if (message.type === 'FILL_FORM' || message.action === 'FILL_FORM') {
     const data = message.matchedData || message.data;
-    const filledFields = fillForm(data);
+    const filledFields = universalFill(data);
     sendResponse({ success: true, filled: filledFields });
   }
   return true;
 });
 
-function fillForm(matchedData) {
-  console.log('AutoFill AI: Starting fill with data:', matchedData);
-  const containers = document.querySelectorAll('.Qr7Oae');
-  const filledFields = [];
+/**
+ * Detects all interactive fields on the page and finds their labels.
+ */
+function detectFields() {
+  const selectors = [
+    'input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="file"])',
+    'textarea',
+    'select',
+    '[role="checkbox"]',
+    '[role="radio"]'
+  ];
   
-  containers.forEach(container => {
-    const label = container.querySelector('.M7eMe')?.innerText?.trim()?.replace('*','')?.trim();
+  const elements = document.querySelectorAll(selectors.join(', '));
+  const detected = [];
+
+  elements.forEach(el => {
+    // 1. Find the best label for this element
+    const label = findBestLabel(el);
+    if (label) {
+      detected.push({
+        label: label,
+        tagName: el.tagName.toLowerCase(),
+        type: el.getAttribute('type') || (el.getAttribute('role') || 'text'),
+        id: el.id,
+        name: el.name
+      });
+    }
+  });
+
+  return detected;
+}
+
+/**
+ * Heuristic-based label detection
+ */
+function findBestLabel(el) {
+  // A. Check for Google Forms Specific Labels (Fallback support)
+  const googleLabel = el.closest('.Qr7Oae')?.querySelector('.M7eMe')?.innerText?.trim()?.replace('*', '')?.trim();
+  if (googleLabel) return googleLabel;
+
+  // 1. Explicit <label for="...">
+  if (el.id) {
+    const labelEl = document.querySelector(`label[for="${el.id}"]`);
+    if (labelEl && labelEl.innerText.trim()) return labelEl.innerText.trim();
+  }
+
+  // 2. Implicit Parent <label>
+  const parentLabel = el.closest('label');
+  if (parentLabel && parentLabel.innerText.trim()) {
+    // Remove the element's own text if it's inside the label
+    return parentLabel.innerText.trim().replace(el.innerText, '').split('\n')[0].trim();
+  }
+
+  // 3. ARIA Labels
+  const ariaLabel = el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.getAttribute('title');
+  if (ariaLabel && ariaLabel.trim()) return ariaLabel.trim();
+
+  const ariaLabelledBy = el.getAttribute('aria-labelledby');
+  if (ariaLabelledBy) {
+    const labelEl = document.getElementById(ariaLabelledBy);
+    if (labelEl && labelEl.innerText.trim()) return labelEl.innerText.trim();
+  }
+
+  // 4. Proximity - Look for text before the input
+  // Scan previous siblings for a text-heavy element
+  let prev = el.previousElementSibling;
+  while (prev) {
+    if (prev.innerText && prev.innerText.trim().length > 1 && prev.innerText.trim().length < 100) {
+      return prev.innerText.trim();
+    }
+    prev = prev.previousElementSibling;
+  }
+
+  // 5. Check parent's children (Common for custom structures)
+  const parent = el.parentElement;
+  if (parent) {
+    const siblingText = parent.querySelector('span, div, p')?.innerText?.trim();
+    if (siblingText && siblingText.length > 1 && siblingText.length < 50) return siblingText;
+  }
+
+  // 6. Name/ID fallback (Last resort, cleaned up)
+  const nameOrId = el.name || el.id;
+  if (nameOrId && nameOrId.length > 2) {
+    return nameOrId.replace(/[-_]/g, ' ').replace(/([A-Z])/g, ' $1').trim();
+  }
+
+  return null;
+}
+
+/**
+ * Universal filling logic that handles different element types and triggers events.
+ */
+function universalFill(matchedData) {
+  console.log('Universal Fill Starting...', matchedData);
+  const filled = [];
+  const fields = detectFields(); // Re-scan to get fresh elements
+
+  const elements = document.querySelectorAll('input, textarea, select, [role="checkbox"], [role="radio"]');
+
+  elements.forEach(el => {
+    const label = findBestLabel(el);
     if (!label) return;
 
-    let value = null;
     const labelLower = label.toLowerCase();
-    
-    // Case-insensitive matching
+    let value = null;
+
+    // Direct match or Fuzzy match
     if (matchedData[label]) {
       value = matchedData[label];
     } else {
-      const matchKey = Object.keys(matchedData).find(k => k.trim().toLowerCase() === labelLower);
+      const matchKey = Object.keys(matchedData).find(k => k.toLowerCase() === labelLower || labelLower.includes(k.toLowerCase()));
       if (matchKey) value = matchedData[matchKey];
     }
 
     if (value) {
-      console.log(`Filling "${label}" with "${value}"`);
-      const valueStr = value.toString();
-      
-      // Text/Email/Tel input
-      const textInput = container.querySelector('input[type="text"], input[type="email"], input[type="tel"]');
-      if (textInput) {
-        textInput.focus();
-        textInput.value = valueStr;
-        textInput.dispatchEvent(new Event('input', { bubbles: true }));
-        textInput.dispatchEvent(new Event('change', { bubbles: true }));
+      const success = fillElement(el, value);
+      if (success) {
+        filled.push(label);
+        highlightField(el, true);
       }
-      
-      // Textarea
-      const textarea = container.querySelector('textarea');
-      if (textarea) {
-        textarea.focus();
-        textarea.value = valueStr;
-        textarea.dispatchEvent(new Event('input', { bubbles: true }));
-        textarea.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-      
-      // Radio buttons
-      const radioOptions = container.querySelectorAll('div[role="radio"]');
-      if (radioOptions.length > 0) {
-        radioOptions.forEach(option => {
-          const optionLabel = option.closest('label')?.querySelector('.YEVVod')?.innerText?.trim();
-          if (optionLabel && optionLabel.toLowerCase() === valueStr.toLowerCase()) {
-            option.click();
-          }
-        });
-      }
-      
-      // Checkboxes
-      const checkboxOptions = container.querySelectorAll('div[role="checkbox"]');
-      if (checkboxOptions.length > 0) {
-        const valuesToCheck = valueStr.split(',').map(v => v.trim().toLowerCase());
-        checkboxOptions.forEach(option => {
-          const optionLabel = option.closest('label')?.querySelector('.YEVVod')?.innerText?.trim();
-          if (optionLabel && valuesToCheck.includes(optionLabel.toLowerCase())) {
-            option.click();
-          }
-        });
-      }
-
-      chrome.runtime.sendMessage({
-        type: 'FIELD_FILLED',
-        field: label,
-        value: valueStr,
-        success: true
-      });
-      filledFields.push(label);
-    } else {
-      console.log(`Skipping field: ${label}`);
-      chrome.runtime.sendMessage({
-        type: 'FIELD_SKIPPED', 
-        field: label
-      });
     }
   });
-  return filledFields;
+
+  return filled;
 }
 
-function highlightSkippedFields(allFields, filledFields) {
-  const containers = document.querySelectorAll('.Qr7Oae');
-  containers.forEach(container => {
-    const labelEl = container.querySelector('.M7eMe');
-    if (labelEl) {
-      const labelText = labelEl.innerText.replace('*', '').trim();
-      if (allFields.includes(labelText) && !filledFields.includes(labelText)) {
-        container.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
-        container.style.borderLeft = '4px solid #F59E0B';
-        container.classList.add('autofill-skipped');
+function fillElement(el, value) {
+  const tagName = el.tagName.toLowerCase();
+  const type = el.getAttribute('type') || el.getAttribute('role');
+
+  try {
+    if (tagName === 'input' || tagName === 'textarea') {
+      if (type === 'checkbox' || type === 'radio') {
+        const valStr = value.toString().toLowerCase();
+        const labelText = findBestLabel(el).toLowerCase();
+        if (labelText.includes(valStr) || valStr === 'true' || valStr === 'yes') {
+          if (!el.checked) el.click();
+        }
       } else {
-        container.style.backgroundColor = '';
-        container.style.borderLeft = '';
-        container.classList.remove('autofill-skipped');
+        triggerValueChange(el, value);
       }
+    } else if (tagName === 'select') {
+      const options = Array.from(el.options);
+      const target = value.toString().toLowerCase();
+      const match = options.find(o => o.text.toLowerCase().includes(target) || o.value.toLowerCase() === target);
+      if (match) {
+        el.value = match.value;
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    } else if (type === 'radio' || type === 'checkbox') {
+      // Role-based elements (like in modern frameworks)
+      el.click();
     }
-  });
-}
-
-// Learning System
-document.addEventListener('submit', captureAndLearn, true);
-document.addEventListener('click', (e) => {
-  const btn = e.target.closest('[role="button"]');
-  if (btn && (btn.innerText.includes('Submit') || btn.innerText.includes('Next'))) {
-    captureAndLearn();
+    return true;
+  } catch (e) {
+    console.error('Error filling element:', e);
+    return false;
   }
-}, true);
+}
 
-function captureAndLearn() {
-  const containers = document.querySelectorAll('.Qr7Oae');
-  containers.forEach(container => {
-    const labelEl = container.querySelector('.M7eMe');
-    const input = container.querySelector('input, textarea');
-    if (labelEl && input && input.value) {
-      const labelText = labelEl.innerText.replace('*', '').trim();
-      const value = input.value.trim();
-      if (value) {
-        chrome.runtime.sendMessage({ action: 'LEARN_FIELD', field: labelText, value: value });
-      }
+function triggerValueChange(el, value) {
+  el.focus();
+  el.value = value;
+  el.setAttribute('value', value);
+  
+  // Dispatch events for React/Vue/etc.
+  el.dispatchEvent(new Event('input', { bubbles: true }));
+  el.dispatchEvent(new Event('change', { bubbles: true }));
+  el.dispatchEvent(new Event('blur', { bubbles: true }));
+}
+
+function highlightField(el, success) {
+  const originalBorder = el.style.border;
+  const originalBg = el.style.backgroundColor;
+  
+  el.style.border = success ? '2px solid #10B981' : '2px solid #EF4444';
+  el.style.backgroundColor = success ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+  
+  setTimeout(() => {
+    el.style.border = originalBorder;
+    el.style.backgroundColor = originalBg;
+  }, 3000);
+}
+
+// Global capture for learning
+document.addEventListener('submit', (e) => {
+  const form = e.target;
+  const inputs = form.querySelectorAll('input, textarea, select');
+  inputs.forEach(el => {
+    const label = findBestLabel(el);
+    const value = el.value;
+    if (label && value && value.length > 0) {
+      chrome.runtime.sendMessage({ action: 'LEARN_FIELD', field: label, value: value });
     }
   });
-}
+}, true);

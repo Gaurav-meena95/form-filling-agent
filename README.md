@@ -76,6 +76,18 @@ npm install
 npm run dev
 ```
 
+### 4. Setup Chrome Extension
+The extension allows you to fill forms directly from any tab without using the dashboard.
+
+1.  Open Chrome and navigate to `chrome://extensions/`.
+2.  Enable **"Developer mode"** (toggle in the top right).
+3.  Click **"Load unpacked"**.
+4.  Select the `extension` folder from this project directory.
+5.  The **AutoFill AI** icon should now appear in your browser toolbar.
+
+> [!IMPORTANT]
+> The backend server (Step 2) must be running for the extension to work.
+
 ## 🔒 Live Session Mode (Recommended)
 
 To allow the agent to fill forms using your **actual Google/LinkedIn/Workday accounts** (without re-logging), start your Chrome browser with remote debugging enabled:
@@ -89,10 +101,17 @@ The agent will detect this window and show a **"LIVE SESSION"** badge in the das
 
 ## 📝 Usage
 
-1. **Profile Setup**: Upload your resume (PDF) in the "Resume Upload" section or fill in details manually. This information is stored securely in your local vector database.
-2. **Launch Browser (Optional)**: If you want to use your logged-in accounts (LinkedIn, Indeed, etc.), start Chrome with remote debugging (see [Live Session Mode](#-live-session-mode-recommended)).
-3. **Trigger Agent**: Enter the URL of the form you want to fill and click **"Start Form Filling"**.
-4. **Watch & Verify**: The agent will navigate to the page, detect the fields, and fill them. You can review and submit the form manually once it's done.
+### Option A: Using the Dashboard (Full Automation)
+1.  **Profile Setup**: Upload your resume (PDF) in the "Resume Upload" section or fill in details manually.
+2.  **Launch Browser**: Start Chrome with remote debugging (see [Live Session Mode](#-live-session-mode-recommended)).
+3.  **Trigger Agent**: Enter the target URL in the dashboard and click **"Start Form Filling"**.
+4.  **Watch & Verify**: The agent opens a new window, fills the fields, and lets you review.
+
+### Option B: Using the Chrome Extension (Manual Control)
+1.  **Open any Form**: Navigate to any web form (e.g., a job application).
+2.  **Open Extension**: Click the AutoFill AI icon in your toolbar.
+3.  **Sync Profile**: Use the "Profile" tab in the extension to upload your resume if you haven't already.
+4.  **Fill Form**: Click **"Fill Form"**. The extension will detect fields on the current page and fill them instantly.
 
 ---
 

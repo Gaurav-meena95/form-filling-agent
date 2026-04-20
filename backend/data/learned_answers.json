@@ -1,0 +1,19 @@
+{
+  "full name": "Gaurav Meena",
+  "email id": "gaurav.meena2024@nst.rishihood.edu.in",
+  "current ctc in lpa": "Not Applicable",
+  "contact": "7724014495",
+  "expectations in lpa": "40000",
+  "university": "Newton School of Technology, Rishihood University",
+  "notice period": "30 Days",
+  "which programming language you work on?": "Python, TypeScript, NoSQL, HTML, CSS, JavaScript, SQL",
+  "current organization": "CarmaaCarCare",
+  "have you built any app and owned it end-to-end? if yes, please describe your project": "Yes, I have built and owned end-to-end projects such as JewelTrack, a smart jewellery inventory and business management system, and Quick Serve, a real-time ordering and tracking system. These projects demonstrate my ability to design and develop full-stack applications, handle user flows, and implement secure authentication and authorisation mechanisms.\n\nIn JewelTrack, I solved real problems from a family jewellery business by digitising manual work like customer records, billing, and order tracking. I built features like customer search, notifications, and inventory handling, and worked on the complete system from frontend to backend using React, Node.js, Express, and MongoDB. The system is actually usable in real workflows and improves daily efficiency.",
+  "have you adopted any ai tools in your projects? if yes, describe which one.": "Yes, I have used AI tools in my projects, including LangChain and LangGraph.\n\nI built an AI form-filling extension that uses LLMs (via Groq) to understand user data and automatically fill complex web forms. I also used Playwright for browser automation to interact with websites.\n\nAdditionally, I developed a Student GitHub Reviewer that uses LLMs to analyze GitHub profiles and generate structured feedback using the GitHub API.\n\nThese tools helped me build more intelligent and efficient systems in real-world use cases.",
+  "total years of experience post internship": "As a student, I have gained experience through internships and personal projects. I have worked as a Frontend Developer Intern at Gistly AI and currently contributing to the Carmaacarcare mobile app. With a strong foundation in computer science and AI, I am eager to apply my skills in a professional setting. My experience has taught me the importance of collaboration, problem-solving, and adaptability in a fast-paced environment.",
+  "are you owning/owned any app end-to-end in you current/past org?": "I have not owned an application end-to-end within an organization yet. At Carmaacarcare, I contribute to a live mobile app used by 1000+ users by building and improving user-focused features.  However, I have taken full end-to-end ownership of my own projects. For example, I built JewelTrack, a full-stack jewellery inventory management system, where I handled everything from backend APIs and database design to frontend development and authentication.  I have also built AI-based projects like the Form Filling Agent and the Student GitHub Reviewer, where I designed and implemented complete systems using LLMs.  This experience has given me strong exposure to both full project ownership and real-world product development.",
+  "describe you achievements": "I have achieved several milestones, including participating in the MumbaiHacks 2025-Agentic AI Hackathon and earning a Supercontributor badge in Hacktoberfest 2025. I have also built and deployed several AI-powered projects, including the Form Filling Agent and the Student Github Reviewer.",
+  "name": "Gaurav Meena",
+  "email": "gaurav.meena2024@nst.rishihood.edu.in",
+  "phone number": "7724014495"
+}
