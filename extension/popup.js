@@ -1,4 +1,4 @@
-let BACKEND_URL = 'http://localhost:3000';
+let BACKEND_URL = 'https://form-filling-agent.onrender.com';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const statusBadge = document.getElementById('connection-status');

@@ -1,129 +1,66 @@
-# Demo video :- https://drive.google.com/file/d/1R9mWJ7jph8_gI4wnGE7-I8giiWl78Rk-/view?usp=sharing
-# 🤖 AutoFill AI Agent
+# 🤖 AutoFill AI: The Ultimate Form-Filling Agent
 
-AutoFill AI is a next-generation form automation assistant that uses Agentic AI to fill complex web forms in seconds. It combines the power of **LangGraph**, **Playwright**, and **RAG (Retrieval-Augmented Generation)** to understand your profile and apply it to any form.
+AutoFill AI is a production-ready Chrome Extension that automates complex web forms using Agentic AI. No more repetitive typing or context switching—our AI agent understands your background and fills forms with human-like precision.
 
-## ❓ Why AutoFill AI? (The Problem)
+**Live Backend:** `https://form-filling-agent.onrender.com`
 
-Filling out job applications, government forms, or surveys is often a soul-crushing experience. 
-- **Repetitive Entry**: Typing your name, email, and experience for the 100th time.
-- **Context Switching**: Endless copying and pasting from your resume or LinkedIn profile.
-- **Complexity**: Forms with dynamic fields or multi-paged layouts that static autofills can't handle.
-
-## 💡 The Solution
-
-AutoFill AI turns your browser into an intelligent agent. Instead of a simple "copy-paste" tool, it uses a **Large Language Model (LLM)** to:
-1. **Understand your profile**: It analyzes your PDF resume and stores it in a searchable local database.
-2. **Read any form**: It scans the web page, identifies required fields (even non-standard ones), and understands their context.
-3. **Execute Precisely**: It fills the fields, selects dropdowns, and handles checkboxes with human-like precision.
-
-## ⚙️ How It Works
-
-The magic happens in a three-stage pipeline:
-
-1. **Ingestion (RAG)**: When you upload a resume, the system parses the text and creates embeddings stored in **ChromaDB**. This allows the agent to "retrieve" the most relevant part of your experience for any specific form field.
-2. **Reasoning (LangGraph)**: We use a state-aware AI flow. The agent doesn't just guess; it checks the page, detects field types, matches them with your data, and plans its next move.
-3. **Action (Playwright)**: The agent controls a real browser instance. It can connect to your **existing Chrome session**, meaning it works even behind logins like LinkedIn, Greenhouse, or Workday.
-
-
-
+---
 
 ## ✨ Features
+- **🚀 One-Click AutoFill**: Detects and fills complex forms in seconds.
+- **📄 AI Resume Intelligence**: Learns from your PDF resume and profile.
+- **🔒 Privacy First**: Your profile data is stored locally in your browser.
+- **🌍 Stateless API**: Scalable backend hosted on Render for global access.
+- **🎨 Premium UI**: Modern glassmorphism dashboard and extension popup.
 
-- **📄 Smart Ingestion**: Upload your PDF resume once, and the agent learns everything about you.
-- **🧠 LangGraph Brain**: Uses structured AI flows to detect fields, match data, and fill forms precisely.
-- **🌐 Live Browser Integration**: Connect directly to your existing Chrome session to reuse your logins and cookies.
-- **💾 Local First**: Your data stays on your machine in a local ChromaDB vector store.
-- **⚡ Lightning Fast**: Fill 50+ fields in under 10 seconds.
+---
 
-## 🛠️ Tech Stack
+## 🚀 Quick Start Guide
 
-- **Frontend**: React, Vite, Tailwind CSS, Lucide Icons.
-- **Backend**: FastAPI, Playwright (Automation), LangGraph (AI Workflow).
-- **AI/ML**: Groq LLM (Llama 3), ChromaDB (Vector Store), LangChain.
+### 1. Install the Chrome Extension
+Since we are in developer mode, follow these steps:
+1. **Download** or Clone this repository.
+2. Open Chrome and go to `chrome://extensions/`.
+3. Enable **"Developer mode"** (top right).
+4. Click **"Load unpacked"** and select the `extension` folder from this repo.
+5. **Pin** AutoFill AI for easy access!
 
-## 🚀 Getting Started
+### 2. Set Up Your Profile
+1. Click the AutoFill AI icon in your toolbar.
+2. Go to the **Profile** tab.
+3. Upload your **Resume (PDF)** or fill in your details manually.
+4. Hit **Save Profile**. Your data is now saved locally and ready to use.
 
-### 1. Prerequisites
-- Python 3.10+
-- Node.js & npm
+### 3. Fill Your First Form
+1. Navigate to any job application or web form.
+2. Open the extension and click **"Fill This Form"**.
+3. Watch as the AI detects fields, matches your data, and populates the form instantly.
 
-### 2. Setup Backend (Local)
-The backend manages the browser automation and AI logic.
+---
 
+## 🛠️ Production Architecture
+
+### **Backend (Python/FastAPI)**
+- **Hosted on**: Render (Docker Runtime)
+- **AI Model**: Groq (Llama-3.3-70b-versatile)
+- **Logic**: Stateless matching—accepts user context per request for infinite scalability and privacy.
+
+### **Frontend (React/Vite)**
+- **Design**: Premium SaaS Landing Page with animations.
+- **Purpose**: Directs users on how to install and use the extension.
+
+---
+
+## 💻 Local Development
+If you want to run the backend locally:
 ```bash
-# Clone the repository
-git clone https://github.com/Gaurav-meena95/form-filling-agent.git
-cd form-filling-agent
-
-# Set up virtual environment
-python -m venv venv
-source venv/bin/activate  # Mac/Linux
-
 # Install dependencies
 pip install -r requirements.txt
-playwright install chromium
 
-# Start the backend server
+# Start local server
 uvicorn backend.main:app --host 0.0.0.0 --port 3000
 ```
-
-### 3. Setup Frontend
-The frontend provides the dashboard for managing your profile and running the agent.
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-### 4. Setup Chrome Extension (The "Brain" on your toolbar)
-The extension allows you to fill forms directly on any website with a single click.
-
-1.  **Navigate**: Open Chrome and go to `chrome://extensions/`.
-2.  **Enable Developer Mode**: Toggle the **"Developer mode"** switch in the top-right corner.
-3.  **Load Extension**: 
-    - Click the **"Load unpacked"** button.
-    - Select the `extension` folder from your cloned `form-filling-agent` directory.
-4.  **Pin for Easy Access**:
-    - Click the **Puzzle Piece icon** (🧩) in your Chrome toolbar.
-    - Find **AutoFill AI** and click the **Pin icon** (📌).
-
-> [!IMPORTANT]
-> **Keep the Backend Running**: The extension communicates with your local FastAPI server. Ensure you have run `uvicorn` (Step 2) before clicking "Fill Form".
-
-## 🧠 Smart Learning Mechanism ("Fort Knox" Protected)
-
-AutoFill AI isn't just a static tool—it learns from you.
-
-- **Proactive Learning**: Whenever you type into a field and move away (blur), or click a Submit/Next button, the agent captures your input.
-- **Smart Key Mapping**: It uses a **Hierarchical Label Engine** to correctly identify fields by their names (e.g., "Date of Birth") rather than generic placeholders.
-- **Data Protection**: Your learned knowledge is stored locally in `learned_answers.json` with **Atomic Writes** and **Automatic Backups**, ensuring your data is never lost or corrupted.
-
-## 🔒 Live Session Mode (Recommended)
-
-To allow the agent to fill forms using your **actual Google/LinkedIn/Workday accounts** (without re-logging), start your Chrome browser with remote debugging enabled:
-
-**On Mac:**
-```bash
-open -a "Google Chrome" --args --remote-debugging-port=9222
-```
-
-The agent will detect this window and show a **"LIVE SESSION"** badge in the dashboard.
-
-## 📝 Usage
-
-### Option A: Using the Dashboard (Full Automation)
-1.  **Profile Setup**: Upload your resume (PDF) in the "Resume Upload" section or fill in details manually.
-2.  **Launch Browser**: Start Chrome with remote debugging (see [Live Session Mode](#-live-session-mode-recommended)).
-3.  **Trigger Agent**: Enter the target URL in the dashboard and click **"Start Form Filling"**.
-4.  **Watch & Verify**: The agent opens a new window, fills the fields, and lets you review.
-
-### Option B: Using the Chrome Extension (Manual Control)
-1.  **Open any Form**: Navigate to any web form (e.g., a job application).
-2.  **Open Extension**: Click the AutoFill AI icon in your toolbar.
-3.  **Sync Profile**: Use the "Profile" tab in the extension to upload your resume if you haven't already.
-4.  **Fill Form**: Click **"Fill Form"**. The extension will detect fields on the current page and fill them instantly.
+Then, update the **Backend URL** in the extension's **Settings** tab to `http://localhost:3000`.
 
 ---
 
