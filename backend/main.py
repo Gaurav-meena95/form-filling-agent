@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 import shutil
 from backend.src.ingestion import store_from_pdf, store_from_manual
-from backend.src.rag_retriever import retrieve_and_match
+from backend.src.rag_retriever import retrieve_and_match, match_stateless
 from backend.src.form_filler import save_learned_answer
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -31,6 +31,11 @@ class LearnRequest(BaseModel):
     field: str
     value: str
 
+class StatelessMatchRequest(BaseModel):
+    fields: list[str]
+    profile_context: str
+    learned_context: str = ""
+
 @app.get("/")
 async def root():
     return {"message": "AutoFill AI API is running"}
@@ -57,6 +62,15 @@ async def match_fields(request: MatchFieldsRequest):
     """Query RAG to match values for detected fields"""
     try:
         matched = retrieve_and_match(request.fields)
+        return {"matched": matched}
+    except Exception as e:
+        return {"matched": {}, "error": str(e)}
+
+@app.post("/match-fields-stateless")
+async def match_fields_stateless(request: StatelessMatchRequest):
+    """Stateless matching for production (no DB dependency)"""
+    try:
+        matched = match_stateless(request.fields, request.profile_context, request.learned_context)
         return {"matched": matched}
     except Exception as e:
         return {"matched": {}, "error": str(e)}

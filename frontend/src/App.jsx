@@ -1,78 +1,75 @@
 import React from 'react';
-import UploadResume from './UploadResume';
-import ManualProfile from './ManualProfile';
-import RunAgent from './RunAgent';
-import { Bot, Zap, Shield, Sparkles } from 'lucide-react';
+import './index.css';
 
 function App() {
   return (
-    <div className="max-w-7xl mx-auto px-6 py-12">
-      <nav className="flex justify-between items-center mb-16 py-6">
-        <div className="flex items-center gap-4">
-          <div className="btn-primary !p-2.5 !rounded-xl">
-            <Bot size={28} />
-          </div>
-          <span className="text-2xl font-black tracking-tighter text-white">AutoFill AI</span>
+    <div className="landing-page">
+      <nav className="container nav">
+        <div className="logo">
+          <div className="logo-icon">🤖</div>
+          <span>AutoFill AI</span>
         </div>
-        <div className="flex items-center gap-10">
-          <a href="#" className="hidden md:block text-slate-400 no-underline text-sm font-medium hover:text-white transition-colors">Docs</a>
-          <a href="#" className="hidden md:block text-slate-400 no-underline text-sm font-medium hover:text-white transition-colors">Privacy</a>
-          <button className="btn-primary !px-5 !py-2 text-sm">Get Started</button>
+        <div className="nav-links">
+          <a href="#features" style={{ color: 'var(--text-dim)', textDecoration: 'none', marginRight: '2rem' }}>Features</a>
+          <a href="#how-it-works" style={{ color: 'var(--text-dim)', textDecoration: 'none' }}>Guide</a>
         </div>
       </nav>
 
-      <header className="text-center mb-20">
-        <div className="inline-flex items-center gap-2 px-5 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-indigo-400 text-xs font-bold mb-8 uppercase tracking-wider">
-          <Sparkles size={16} /> Next-Gen Form Automation
-        </div>
-        <h1 className="text-6xl md:text-7xl font-extrabold mb-6 leading-[1.1] tracking-tight text-white">
-          Fill forms in seconds, <br />not minutes.
+      <header className="container hero" style={{ padding: '8rem 0', textAlign: 'center' }}>
+        <h1 style={{ fontSize: '4rem', marginBottom: '1.5rem', background: 'linear-gradient(to right, #fff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          AI-Powered Form Filling <br />
+          <span style={{ color: 'var(--primary)', WebkitTextFillColor: 'initial' }}>Save Time, Boost Accuracy</span>
         </h1>
-        <p className="text-slate-400 text-xl max-w-2xl mx-auto leading-relaxed">
-          Upload your resume once and let our intelligent agent handle the boring stuff. 
-          Perfect for job applications, KYC, and surveys.
+        <p style={{ fontSize: '1.25rem', color: 'var(--text-dim)', maxWidth: '700px', margin: '0 auto 3rem' }}>
+          Stop wasting hours on job applications. Our AI agent learns from your resume and profile to fill any form instantly with high precision.
         </p>
+        <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center' }}>
+          <button className="btn-primary" onClick={() => window.open('https://github.com/Gaurav-meena95/form-filling-agent', '_blank')}>
+            Download Extension
+          </button>
+          <a href="#how-it-works" className="btn-secondary" style={{ padding: '1rem 2.5rem', borderRadius: '50px', border: '1px solid var(--glass-border)', color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+            Watch Guide
+          </a>
+        </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-24">
-        <div className="flex flex-col gap-8">
-          <UploadResume />
-          <ManualProfile />
+      <section id="how-it-works" className="container" style={{ padding: '6rem 0' }}>
+        <h2 style={{ textAlign: 'center', fontSize: '2.5rem', marginBottom: '4rem' }}>How AutoFill AI Works</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+          <div className="glass-card">
+            <div style={{ fontSize: '2rem', marginBottom: '1.5rem' }}>📦</div>
+            <h3>1. Install Extension</h3>
+            <p style={{ color: 'var(--text-dim)', marginTop: '1rem' }}>
+              Download the extension folder, go to <code>chrome://extensions</code>, enable Developer Mode, and click 'Load Unpacked'.
+            </p>
+          </div>
+          <div className="glass-card">
+            <div style={{ fontSize: '2rem', marginBottom: '1.5rem' }}>📄</div>
+            <h3>2. Set Up Profile</h3>
+            <p style={{ color: 'var(--text-dim)', marginTop: '1rem' }}>
+              Upload your resume and fill in your basic details. Our AI uses this context to understand your background.
+            </p>
+          </div>
+          <div className="glass-card">
+            <div style={{ fontSize: '2rem', marginBottom: '1.5rem' }}>⚡</div>
+            <h3>3. Fill Any Form</h3>
+            <p style={{ color: 'var(--text-dim)', marginTop: '1rem' }}>
+              Navigate to any application form, open the extension, and hit 'Fill Form'. Watch the magic happen in seconds.
+            </p>
+          </div>
         </div>
-        <RunAgent />
-      </div>
+      </section>
 
-      <div className="glass-card p-12 text-center bg-gradient-to-br from-slate-800/10 to-slate-900/30">
-        <h3 className="text-3xl font-extrabold mb-12 text-white">Why use AutoFill AI?</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="text-indigo-400 bg-indigo-400/10 p-4 rounded-2xl">
-              <Zap size={32} />
-            </div>
-            <h4 className="font-bold text-xl text-white">Lightning Fast</h4>
-            <p className="text-slate-400 text-sm leading-relaxed">Fill complex forms with 50+ fields in under 10 seconds.</p>
-          </div>
-          <div className="flex flex-col items-center gap-4">
-            <div className="text-violet-400 bg-violet-400/10 p-4 rounded-2xl">
-              <Shield size={32} />
-            </div>
-            <h4 className="font-bold text-xl text-white">Secure & Private</h4>
-            <p className="text-slate-400 text-sm leading-relaxed">Your resume data is encrypted and stored in your local ChromaDB.</p>
-          </div>
-          <div className="flex flex-col items-center gap-4">
-            <div className="text-rose-400 bg-rose-400/10 p-4 rounded-2xl">
-              <Bot size={32} />
-            </div>
-            <h4 className="font-bold text-xl text-white">Human-like</h4>
-            <p className="text-slate-400 text-sm leading-relaxed">Smart agent handles checkboxes, dropdowns, and dynamic fields.</p>
-          </div>
+      <section className="container" style={{ padding: '6rem 0', textAlign: 'center' }}>
+        <div className="glass-card" style={{ padding: '4rem', background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1))' }}>
+          <h2 style={{ fontSize: '2.5rem', marginBottom: '1.5rem' }}>Ready to speed up your search?</h2>
+          <p style={{ color: 'var(--text-dim)', marginBottom: '2.5rem' }}>Join hundreds of developers using AutoFill AI to land their dream jobs.</p>
+          <button className="btn-primary">Add to Chrome — It's Free</button>
         </div>
-      </div>
+      </section>
 
-      <footer className="mt-32 pb-16 border-t border-white/5 pt-16 text-center">
-        <div className="text-slate-600 text-sm font-medium">
-          © 2026 AutoFill AI Agent. Built for speed and productivity.
-        </div>
+      <footer className="container" style={{ padding: '4rem 0', borderTop: '1px solid var(--glass-border)', textAlign: 'center', color: 'var(--text-dim)' }}>
+        <p>© 2026 AutoFill AI. Built with ❤️ for the developer community.</p>
       </footer>
     </div>
   );

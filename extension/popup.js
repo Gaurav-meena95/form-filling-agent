@@ -1,4 +1,4 @@
-const BACKEND_URL = 'http://localhost:3000';
+let BACKEND_URL = 'http://localhost:3000';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const statusBadge = document.getElementById('connection-status');
@@ -9,6 +9,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   const progressArea = document.getElementById('progress-area');
   const summaryArea = document.getElementById('summary-area');
   const fieldsList = document.getElementById('fields-list');
+
+  // Load Settings
+  const settings = await chrome.storage.local.get(['apiUrl', 'profile', 'resumeText']);
+  if (settings.apiUrl) {
+    BACKEND_URL = settings.apiUrl;
+    document.getElementById('api-url').value = BACKEND_URL;
+  }
+
+  // Pre-fill Profile
+  if (settings.profile) {
+    document.getElementById('p-name').value = settings.profile["Full Name"] || '';
+    document.getElementById('p-email').value = settings.profile["Email"] || '';
+    document.getElementById('p-phone').value = settings.profile["Phone"] || '';
+    document.getElementById('p-college').value = settings.profile["College"] || '';
+    document.getElementById('p-year').value = settings.profile["Year"] || '';
+    document.getElementById('p-skills').value = settings.profile["Skills"] || '';
+    document.getElementById('p-exp').value = settings.profile["Experience Summary"] || '';
+  }
 
   // Tab Switching
   const tabBtns = document.querySelectorAll('.tab-btn');
@@ -24,7 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  // 1. Health Check
+  // Health Check
   async function checkBackend() {
     try {
       const res = await fetch(`${BACKEND_URL}/`);
@@ -42,21 +60,31 @@ document.addEventListener('DOMContentLoaded', async () => {
   checkBackend();
   setInterval(checkBackend, 5000);
 
-  // 2. Resume Upload
+  // Settings Save
+  document.getElementById('save-settings-btn').addEventListener('click', async () => {
+    const newUrl = document.getElementById('api-url').value.trim();
+    await chrome.storage.local.set({ apiUrl: newUrl });
+    BACKEND_URL = newUrl;
+    alert('Settings saved!');
+    checkBackend();
+  });
+
+  // Resume Upload (Simplified for Production - extracts text)
   resumeInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    uploadStatus.textContent = 'Uploading...';
-    uploadStatus.style.color = 'var(--text-dim)';
-
+    uploadStatus.textContent = 'Processing...';
+    
+    // In a real production app, we'd use pdf.js to extract text here
+    // For now, we still upload to backend to keep RAG logic if available
     const formData = new FormData();
     formData.append('file', file);
 
     try {
       const res = await fetch(`${BACKEND_URL}/upload-resume`, { method: 'POST', body: formData });
       if (res.ok) {
-        uploadStatus.textContent = '✅ Resume updated!';
+        uploadStatus.textContent = '✅ Resume ready!';
         uploadStatus.style.color = 'var(--success)';
       } else { throw new Error(); }
     } catch (err) {
@@ -65,7 +93,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // 3. Save Manual Profile
+  // Save Profile Locally
   const saveManualBtn = document.getElementById('save-manual-btn');
   const saveStatus = document.getElementById('save-status');
 
@@ -81,25 +109,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     saveStatus.textContent = 'Saving...';
-    saveStatus.style.color = 'var(--text-dim)';
-
+    await chrome.storage.local.set({ profile });
+    
+    // Also sync to backend if connected
     try {
-      const res = await fetch(`${BACKEND_URL}/manual-profile`, {
+      await fetch(`${BACKEND_URL}/manual-profile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(profile)
       });
-      if (res.ok) {
-        saveStatus.textContent = '✅ Profile saved!';
-        saveStatus.style.color = 'var(--success)';
-      } else { throw new Error(); }
-    } catch (err) {
-      saveStatus.textContent = '❌ Save failed';
-      saveStatus.style.color = 'var(--error)';
-    }
+    } catch (e) {}
+
+    saveStatus.textContent = '✅ Profile saved locally!';
+    saveStatus.style.color = 'var(--success)';
   });
 
-  // 4. Fill Form Flow
+  // Fill Form Flow
   fillBtn.addEventListener('click', async () => {
     const btnText = fillBtn.querySelector('.btn-text');
     const loader = fillBtn.querySelector('.loader-dots');
@@ -115,40 +140,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-      // Force inject content.js first before sending any message
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        files: ['content.js']
-      });
-
-      // Wait for injection to complete
+      await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] });
       await new Promise(resolve => setTimeout(resolve, 800));
 
-      // Step 1: Detect fields directly from page (no backend call needed)
+      // Step 1: Detect
       updateStep('step-detect', 'active');
-      
-      let pageInfo;
-      try {
-        pageInfo = await chrome.tabs.sendMessage(tab.id, { action: 'GET_HTML' });
-      } catch (e) {
-        alert('Cannot access this page. Please open a form first.');
-        return;
-      }
-
+      const pageInfo = await chrome.tabs.sendMessage(tab.id, { action: 'GET_HTML' });
       const fields = pageInfo.fields || [];
-      if (fields.length === 0) {
-        alert('No form fields detected on this page.');
-        return;
-      }
+      if (fields.length === 0) throw new Error('No fields found');
       updateStep('step-detect', 'complete', `${fields.length} found`);
 
-      // Step 2: Match
+      // Step 2: Match (Stateless for Production)
       updateStep('step-match', 'active');
-      const matchRes = await fetch(`${BACKEND_URL}/match-fields`, {
+      
+      const { profile } = await chrome.storage.local.get('profile');
+      const profileCtx = JSON.stringify(profile || {});
+
+      const matchRes = await fetch(`${BACKEND_URL}/match-fields-stateless`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fields })
+        body: JSON.stringify({ 
+          fields,
+          profile_context: profileCtx
+        })
       });
       const matchData = await matchRes.json();
       const matched = matchData.matched || {};
@@ -156,28 +170,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       // Step 3: Fill
       updateStep('step-fill', 'active');
-
-      // Wait for injection to complete
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      let fillResult;
-      try {
-        fillResult = await chrome.tabs.sendMessage(tab.id, {
-          type: 'FILL_FORM',
-          matchedData: matched
-        });
-      } catch(e) {
-        fillResult = { filled: [] };
-      }
+      const fillResult = await chrome.tabs.sendMessage(tab.id, {
+        type: 'FILL_FORM',
+        matchedData: matched
+      });
 
       updateStep('step-fill', 'complete', 'Finished');
       showSummary(fields, matched, fillResult?.filled || []);
 
     } catch (err) {
-      console.error('Full error:', err);
       alert(`Error: ${err.message}`);
-    }
- finally {
+    } finally {
       btnText.hidden = false;
       loader.hidden = true;
       fillBtn.disabled = false;
@@ -204,24 +207,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       const value = matched[field];
       const div = document.createElement('div');
       div.className = 'field-item';
-      
-      if (value) {
-        div.innerHTML = `
-          <div class="field-header">
-            <span class="field-name">${field}</span>
-            <span class="field-status">✅</span>
-          </div>
-          <div class="field-value">${value}</div>
-        `;
-      } else {
-        div.innerHTML = `
-          <div class="field-header">
-            <span class="field-name">${field}</span>
-            <span class="field-status">⚠️</span>
-          </div>
-          <div class="field-value" style="color: var(--warning); font-style: italic;">Skipped (no data)</div>
-        `;
-      }
+      div.innerHTML = value ? 
+        `<div class="field-header"><span class="field-name">${field}</span><span>✅</span></div><div class="field-value">${value}</div>` :
+        `<div class="field-header"><span class="field-name">${field}</span><span>⚠️</span></div><div class="field-value" style="color:var(--warning)">Skipped</div>`;
       fieldsList.appendChild(div);
     });
   }

@@ -129,3 +129,16 @@ def retrieve_and_match(form_fields: list) -> dict:
     print(f"Matched {len(matched)} fields successfully.")
     
     return matched
+def match_stateless(form_fields: list, profile_context: str, learned_context: str = "") -> dict:
+    """Stateless version of matching for production use (data sent in request)"""
+    final_context = profile_context
+    if learned_context:
+        final_context += "\n\n### USER'S PREVIOUSLY CORRECTED ANSWERS:\n" + learned_context
+    prompt = ChatPromptTemplate.from_template("Profile: {relevant_info}\nFields: {fields}\nReturn JSON.")
+    chain = prompt | llm
+    response = chain.invoke({"relevant_info": final_context, "fields": ", ".join(form_fields)})
+    try:
+        raw = response.content.strip()
+        start, end = raw.find("{"), raw.rfind("}") + 1
+        return json.loads(raw[start:end])
+    except: return {}
