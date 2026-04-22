@@ -12,17 +12,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   const fieldsList = document.getElementById('fields-list');
 
   // Load Saved Data
-  const settings = await chrome.storage.local.get(['profile']);
+  const saved = await chrome.storage.local.get(['profile', 'learnedAnswers', 'resumeText']);
 
   // Pre-fill Profile
-  if (settings.profile) {
-    document.getElementById('p-name').value = settings.profile["Full Name"] || '';
-    document.getElementById('p-email').value = settings.profile["Email"] || '';
-    document.getElementById('p-phone').value = settings.profile["Phone"] || '';
-    document.getElementById('p-college').value = settings.profile["College"] || '';
-    document.getElementById('p-year').value = settings.profile["Year"] || '';
-    document.getElementById('p-skills').value = settings.profile["Skills"] || '';
-    document.getElementById('p-exp').value = settings.profile["Experience Summary"] || '';
+  if (saved.profile) {
+    document.getElementById('p-name').value = saved.profile["Full Name"] || '';
+    document.getElementById('p-email').value = saved.profile["Email"] || '';
+    document.getElementById('p-phone').value = saved.profile["Phone"] || '';
+    document.getElementById('p-college').value = saved.profile["College"] || '';
+    document.getElementById('p-year').value = saved.profile["Year"] || '';
+    document.getElementById('p-skills').value = saved.profile["Skills"] || '';
+    document.getElementById('p-exp').value = saved.profile["Experience Summary"] || '';
   }
 
   // Tab Switching
@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
   checkBackend();
-  setInterval(checkBackend, 5000);
+  setInterval(checkBackend, 10000);
 
   // Resume Upload
   resumeInput.addEventListener('change', async (e) => {
@@ -63,15 +63,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!file) return;
 
     uploadStatus.textContent = 'Processing...';
+    
+    // Send to backend for RAG processing (stateless session)
     const formData = new FormData();
     formData.append('file', file);
 
     try {
       const res = await fetch(`${BACKEND_URL}/upload-resume`, { method: 'POST', body: formData });
-      if (res.ok) {
-        uploadStatus.textContent = '✅ Resume ready!';
-        uploadStatus.style.color = 'var(--success)';
-      } else { throw new Error(); }
+      const data = await res.json();
+      
+      // Also save file name locally
+      await chrome.storage.local.set({ lastResume: file.name });
+      
+      uploadStatus.textContent = '✅ Resume ready!';
+      uploadStatus.style.color = 'var(--success)';
     } catch (err) {
       uploadStatus.textContent = '❌ Upload failed';
       uploadStatus.style.color = 'var(--error)';
@@ -125,15 +130,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       updateStep('step-detect', 'complete', `${fields.length} found`);
 
       updateStep('step-match', 'active');
-      const { profile } = await chrome.storage.local.get('profile');
+      const { profile, learnedAnswers } = await chrome.storage.local.get(['profile', 'learnedAnswers']);
+      
+      // Combine all context
       const profileCtx = JSON.stringify(profile || {});
+      const learnedCtx = JSON.stringify(learnedAnswers || {});
 
       const matchRes = await fetch(`${BACKEND_URL}/match-fields-stateless`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           fields,
-          profile_context: profileCtx
+          profile_context: profileCtx,
+          learned_context: learnedCtx
         })
       });
       const matchData = await matchRes.json();

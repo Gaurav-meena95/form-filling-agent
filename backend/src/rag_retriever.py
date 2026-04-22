@@ -129,16 +129,44 @@ def retrieve_and_match(form_fields: list) -> dict:
     print(f"Matched {len(matched)} fields successfully.")
     
     return matched
+
 def match_stateless(form_fields: list, profile_context: str, learned_context: str = "") -> dict:
     """Stateless version of matching for production use (data sent in request)"""
-    final_context = profile_context
+    
+    final_context = f"Candidate Profile:\n{profile_context}"
     if learned_context:
-        final_context += "\n\n### USER'S PREVIOUSLY CORRECTED ANSWERS:\n" + learned_context
-    prompt = ChatPromptTemplate.from_template("Profile: {relevant_info}\nFields: {fields}\nReturn JSON.")
+        final_context += "\n\n### USER'S PREVIOUSLY CORRECTED ANSWERS (HIGH PRIORITY):\n" + learned_context
+
+    prompt = ChatPromptTemplate.from_template("""
+    You are an intelligent job application assistant. Match the candidate's profile with the form fields.
+
+    CONTEXT:
+    {relevant_info}
+
+    FIELDS TO FILL:
+    {fields}
+
+    RULES:
+    - "Email Id (RU domain)" = university email (.edu.in)
+    - "Enrollment No" = search for student ID or registration numbers
+    - "LeetCode Profile" = find LeetCode URL
+    - "CodeChef Profile" = find CodeChef URL
+    - "mid level and hard level problems solved" = search for problem counts in profile
+    - "DSA Knowledge" = Answer "Yes" if student has CS/IT background or skills.
+    - If no data is found, return null. Return ONLY valid JSON.
+    """)
+    
     chain = prompt | llm
-    response = chain.invoke({"relevant_info": final_context, "fields": ", ".join(form_fields)})
+    response = chain.invoke({
+        "relevant_info": final_context,
+        "fields": ", ".join(form_fields)
+    })
+    
     try:
         raw = response.content.strip()
-        start, end = raw.find("{"), raw.rfind("}") + 1
-        return json.loads(raw[start:end])
-    except: return {}
+        start = raw.find("{")
+        end = raw.rfind("}") + 1
+        data = json.loads(raw[start:end])
+        return {k: v for k, v in data.items() if v is not None}
+    except:
+        return {}
