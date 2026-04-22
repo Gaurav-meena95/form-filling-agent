@@ -9,6 +9,7 @@ AutoFill AI is a production-ready Chrome Extension that automates complex web fo
 ## ✨ Features
 - **🚀 One-Click AutoFill**: Detects and fills complex forms in seconds.
 - **📄 AI Resume Intelligence**: Learns from your PDF resume and profile.
+- **🚀 Zero Configuration**: Works out-of-the-box with our production backend.
 - **🔒 Privacy First**: Your profile data is stored locally in your browser.
 - **🌍 Stateless API**: Scalable backend hosted on Render for global access.
 - **🎨 Premium UI**: Modern glassmorphism dashboard and extension popup.
@@ -18,21 +19,20 @@ AutoFill AI is a production-ready Chrome Extension that automates complex web fo
 ## 🚀 Quick Start Guide
 
 ### 1. Install the Chrome Extension
-Since we are in developer mode, follow these steps:
 1. **Download** or Clone this repository.
 2. Open Chrome and go to `chrome://extensions/`.
 3. Enable **"Developer mode"** (top right).
-4. Click **"Load unpacked"** and select the `extension` folder from this repo.
-5. **Pin** AutoFill AI for easy access!
+4. Click **"Load unpacked"** and select the `extension` folder.
+5. **Pin** AutoFill AI!
 
 ### 2. Set Up Your Profile
-1. Click the AutoFill AI icon in your toolbar.
+1. Click the AutoFill AI icon.
 2. Go to the **Profile** tab.
-3. Upload your **Resume (PDF)** or fill in your details manually.
-4. Hit **Save Profile**. Your data is now saved locally and ready to use.
+3. Upload your **Resume** or fill in your details.
+4. Hit **Save Profile**.
 
 ### 3. Fill Your First Form
-1. Navigate to any job application or web form.
+1. Navigate to any form.
 2. Open the extension and click **"Fill This Form"**.
 3. Watch as the AI detects fields, matches your data, and populates the form instantly.
 

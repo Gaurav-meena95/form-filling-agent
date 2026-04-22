@@ -1,4 +1,5 @@
-let BACKEND_URL = 'https://form-filling-agent.onrender.com';
+// PRODUCTION URL: This is where the extension talks to the AI
+const BACKEND_URL = 'https://form-filling-agent.onrender.com';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const statusBadge = document.getElementById('connection-status');
@@ -10,12 +11,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const summaryArea = document.getElementById('summary-area');
   const fieldsList = document.getElementById('fields-list');
 
-  // Load Settings
-  const settings = await chrome.storage.local.get(['apiUrl', 'profile', 'resumeText']);
-  if (settings.apiUrl) {
-    BACKEND_URL = settings.apiUrl;
-    document.getElementById('api-url').value = BACKEND_URL;
-  }
+  // Load Saved Data
+  const settings = await chrome.storage.local.get(['profile']);
 
   // Pre-fill Profile
   if (settings.profile) {
@@ -60,24 +57,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   checkBackend();
   setInterval(checkBackend, 5000);
 
-  // Settings Save
-  document.getElementById('save-settings-btn').addEventListener('click', async () => {
-    const newUrl = document.getElementById('api-url').value.trim();
-    await chrome.storage.local.set({ apiUrl: newUrl });
-    BACKEND_URL = newUrl;
-    alert('Settings saved!');
-    checkBackend();
-  });
-
-  // Resume Upload (Simplified for Production - extracts text)
+  // Resume Upload
   resumeInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     uploadStatus.textContent = 'Processing...';
-    
-    // In a real production app, we'd use pdf.js to extract text here
-    // For now, we still upload to backend to keep RAG logic if available
     const formData = new FormData();
     formData.append('file', file);
 
@@ -110,17 +95,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     saveStatus.textContent = 'Saving...';
     await chrome.storage.local.set({ profile });
-    
-    // Also sync to backend if connected
-    try {
-      await fetch(`${BACKEND_URL}/manual-profile`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(profile)
-      });
-    } catch (e) {}
-
-    saveStatus.textContent = '✅ Profile saved locally!';
+    saveStatus.textContent = '✅ Profile saved!';
     saveStatus.style.color = 'var(--success)';
   });
 
@@ -143,16 +118,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] });
       await new Promise(resolve => setTimeout(resolve, 800));
 
-      // Step 1: Detect
       updateStep('step-detect', 'active');
       const pageInfo = await chrome.tabs.sendMessage(tab.id, { action: 'GET_HTML' });
       const fields = pageInfo.fields || [];
       if (fields.length === 0) throw new Error('No fields found');
       updateStep('step-detect', 'complete', `${fields.length} found`);
 
-      // Step 2: Match (Stateless for Production)
       updateStep('step-match', 'active');
-      
       const { profile } = await chrome.storage.local.get('profile');
       const profileCtx = JSON.stringify(profile || {});
 
@@ -168,7 +140,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       const matched = matchData.matched || {};
       updateStep('step-match', 'complete', `${Object.keys(matched).length} matched`);
 
-      // Step 3: Fill
       updateStep('step-fill', 'active');
       const fillResult = await chrome.tabs.sendMessage(tab.id, {
         type: 'FILL_FORM',
