@@ -76,17 +76,28 @@ npm install
 npm run dev
 ```
 
-### 4. Setup Chrome Extension
-The extension allows you to fill forms directly from any tab without using the dashboard.
+### 4. Setup Chrome Extension (The "Brain" on your toolbar)
+The extension allows you to fill forms directly on any website with a single click.
 
-1.  Open Chrome and navigate to `chrome://extensions/`.
-2.  Enable **"Developer mode"** (toggle in the top right).
-3.  Click **"Load unpacked"**.
-4.  Select the `extension` folder from this project directory.
-5.  The **AutoFill AI** icon should now appear in your browser toolbar.
+1.  **Navigate**: Open Chrome and go to `chrome://extensions/`.
+2.  **Enable Developer Mode**: Toggle the **"Developer mode"** switch in the top-right corner.
+3.  **Load Extension**: 
+    - Click the **"Load unpacked"** button.
+    - Select the `extension` folder from your cloned `form-filling-agent` directory.
+4.  **Pin for Easy Access**:
+    - Click the **Puzzle Piece icon** (🧩) in your Chrome toolbar.
+    - Find **AutoFill AI** and click the **Pin icon** (📌).
 
 > [!IMPORTANT]
-> The backend server (Step 2) must be running for the extension to work.
+> **Keep the Backend Running**: The extension communicates with your local FastAPI server. Ensure you have run `uvicorn` (Step 2) before clicking "Fill Form".
+
+## 🧠 Smart Learning Mechanism ("Fort Knox" Protected)
+
+AutoFill AI isn't just a static tool—it learns from you.
+
+- **Proactive Learning**: Whenever you type into a field and move away (blur), or click a Submit/Next button, the agent captures your input.
+- **Smart Key Mapping**: It uses a **Hierarchical Label Engine** to correctly identify fields by their names (e.g., "Date of Birth") rather than generic placeholders.
+- **Data Protection**: Your learned knowledge is stored locally in `learned_answers.json` with **Atomic Writes** and **Automatic Backups**, ensuring your data is never lost or corrupted.
 
 ## 🔒 Live Session Mode (Recommended)
 
