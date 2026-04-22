@@ -46,7 +46,7 @@ body::before {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  min-height: 100vh;
+  min-height: 500px; /* Stabilize height */
 }
 
 header {
@@ -59,12 +59,6 @@ header {
 .logo-area {
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-
-.logo-icon {
-  font-size: 28px;
-  filter: drop-shadow(0 0 10px var(--primary-glow));
 }
 
 h1 {
@@ -381,6 +375,22 @@ input:focus, textarea:focus {
   border-radius: 10px;
   border: 1px solid var(--glass-border);
 }
+
+.field-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.field-status-icon {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.field-status-icon.success { background: var(--success); box-shadow: 0 0 6px var(--success); }
+.field-status-icon.warning { background: var(--warning); box-shadow: 0 0 6px var(--warning); }
 
 .field-name { 
   font-size: 10px; 

@@ -75,10 +75,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Also save file name locally
       await chrome.storage.local.set({ lastResume: file.name });
       
-      uploadStatus.textContent = '✅ Resume ready!';
+      uploadStatus.textContent = 'Resume ready';
       uploadStatus.style.color = 'var(--success)';
     } catch (err) {
-      uploadStatus.textContent = '❌ Upload failed';
+      uploadStatus.textContent = 'Upload failed';
       uploadStatus.style.color = 'var(--error)';
     }
   });
@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     saveStatus.textContent = 'Saving...';
     await chrome.storage.local.set({ profile });
-    saveStatus.textContent = '✅ Profile saved!';
+    saveStatus.textContent = 'Profile saved';
     saveStatus.style.color = 'var(--success)';
   });
 
@@ -188,8 +188,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const div = document.createElement('div');
       div.className = 'field-item';
       div.innerHTML = value ? 
-        `<div class="field-header"><span class="field-name">${field}</span><span>✅</span></div><div class="field-value">${value}</div>` :
-        `<div class="field-header"><span class="field-name">${field}</span><span>⚠️</span></div><div class="field-value" style="color:var(--warning)">Skipped</div>`;
+        `<div class="field-header"><span class="field-name">${field}</span><span class="field-status-icon success"></span></div><div class="field-value">${value}</div>` :
+        `<div class="field-header"><span class="field-name">${field}</span><span class="field-status-icon warning"></span></div><div class="field-value" style="color:var(--warning)">Skipped</div>`;
       fieldsList.appendChild(div);
     });
   }
