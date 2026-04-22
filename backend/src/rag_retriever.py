@@ -9,7 +9,7 @@ from backend.src.form_filler import load_learned_answers
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
 
-# Connect to existing ChromaDB
+# Database connection
 _base_dir = os.path.dirname(os.path.abspath(__file__))
 client = chromadb.PersistentClient(path=os.path.join(_base_dir, "..", "data", "user_profiles"))
 embedding_fn = embedding_functions.DefaultEmbeddingFunction()
@@ -24,12 +24,11 @@ llm = ChatGroq(
 )
 
 def retrieve_and_match(form_fields: list) -> dict:
-    """Retrieve relevant info from ChromaDB and match with form fields using LLM"""
+    """Retrieve info from ChromaDB and match with form fields using LLM"""
     
-    # Step 1 - Retrieve ALL stored profile data
     retrieved_chunks = set()
     
-    # 1. Broad query to get ALL stored documents
+    # 1. Fetch all stored docs
     all_stored = collection.get()
     all_docs = all_stored.get("documents", [])
     if all_docs:
@@ -37,7 +36,7 @@ def retrieve_and_match(form_fields: list) -> dict:
         full_context = "\n\n---\n\n".join([doc for doc in all_docs if doc])
         retrieved_chunks.add(full_context)
             
-    # 2. Semantic search for each form field for better accuracy
+    # 2. Semantic search for specific fields
     for field in form_fields:
         result = collection.query(
             query_texts=[field],
@@ -50,7 +49,7 @@ def retrieve_and_match(form_fields: list) -> dict:
     
     relevant_info = "\n".join(list(retrieved_chunks))
     
-    # 3. Add Learned Answers (High Priority)
+    # 3. Add Learned Answers (Prioritized)
     learned = load_learned_answers()
     learned_context = ""
     if learned:
@@ -59,7 +58,7 @@ def retrieve_and_match(form_fields: list) -> dict:
             learned_context += f"- {field}: {val}\n"
     
     final_context = relevant_info + learned_context
-    print(f"Retrieved {len(retrieved_chunks)} unique chunks from ChromaDB and {len(learned)} learned answers.")
+    print(f"Retrieved {len(retrieved_chunks)} unique chunks and {len(learned)} learned answers.")
     
     # Step 2 - LLM matches retrieved info with form fields
     prompt = ChatPromptTemplate.from_template("""
@@ -120,8 +119,7 @@ def retrieve_and_match(form_fields: list) -> dict:
             return {}
         data = json.loads(raw[start:end])
     except Exception as e:
-        print(f"Failed to parse LLM response as JSON: {e}")
-        print(f"Raw response: {raw}")
+        print(f"Failed to parse LLM response: {e}")
         return {}
     
     # Remove null values - only keep matched fields
@@ -131,14 +129,26 @@ def retrieve_and_match(form_fields: list) -> dict:
     return matched
 
 def match_stateless(form_fields: list, profile_context: str, learned_context: str = "") -> dict:
-    """Stateless version of matching for production use (data sent in request)"""
+    """Stateless matching for production use"""
     
+    # Load backend's learned answers
+    backend_learned = load_learned_answers()
+    backend_learned_str = ""
+    if backend_learned:
+        backend_learned_str = "\n".join([f"- {f}: {v}" for f, v in backend_learned.items()])
+
     final_context = f"Candidate Profile:\n{profile_context}"
-    if learned_context:
-        final_context += "\n\n### USER'S PREVIOUSLY CORRECTED ANSWERS (HIGH PRIORITY):\n" + learned_context
+    
+    if backend_learned_str or learned_context:
+        final_context += "\n\n### USER'S PREVIOUSLY CORRECTED ANSWERS (HIGH PRIORITY):\n"
+        if backend_learned_str:
+            final_context += backend_learned_str + "\n"
+        if learned_context:
+            final_context += learned_context
 
     prompt = ChatPromptTemplate.from_template("""
     You are an intelligent job application assistant. Match the candidate's profile with the form fields.
+    Use the provided candidate profile and high-priority corrected answers to accurately fill the form.
 
     CONTEXT:
     {relevant_info}
@@ -168,5 +178,6 @@ def match_stateless(form_fields: list, profile_context: str, learned_context: st
         end = raw.rfind("}") + 1
         data = json.loads(raw[start:end])
         return {k: v for k, v in data.items() if v is not None}
-    except:
+    except Exception as e:
+        print(f"Error in stateless match: {e}")
         return {}

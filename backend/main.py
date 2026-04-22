@@ -12,7 +12,7 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 app = FastAPI()
 
-# Enable CORS for frontend and extension
+# CORS Middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -46,20 +46,20 @@ async def upload_resume(file: UploadFile = File(...)):
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     
-    # Process PDF into ChromaDB
+    # Process PDF
     store_from_pdf(file_path)
     
     return {"message": "Resume uploaded and processed successfully", "filename": file.filename}
 
 @app.post("/manual-profile")
 async def manual_profile(data: dict):
-    # Process manual JSON data into ChromaDB
+    # Process manual profile
     store_from_manual(data)
     return {"message": "Manual profile stored successfully"}
 
 @app.post("/match-fields")
 async def match_fields(request: MatchFieldsRequest):
-    """Query RAG to match values for detected fields"""
+    """Query RAG for matching values"""
     try:
         matched = retrieve_and_match(request.fields)
         return {"matched": matched}
@@ -77,7 +77,7 @@ async def match_fields_stateless(request: StatelessMatchRequest):
 
 @app.post("/learn")
 async def learn_from_user(request: LearnRequest):
-    """Save user-filled value for future use"""
+    """Save user correction"""
     try:
         save_learned_answer(request.field, request.value)
         return {"status": "success"}
