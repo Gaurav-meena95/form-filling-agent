@@ -1,6 +1,7 @@
-// PRODUCTION URL: This is where the extension talks to the AI
-// const BACKEND_URL = 'https://form-filling-agent.onrender.com';
-const BACKEND_URL = 'http://localhost:3000';
+// Auto-detect environment based on extension installation method
+// (Unpacked extensions don't have an update_url)
+const isDev = !('update_url' in chrome.runtime.getManifest());
+const BACKEND_URL = isDev ? 'http://localhost:3000' : 'https://form-filling-agent.onrender.com';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const statusBadge = document.getElementById('connection-status');
