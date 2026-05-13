@@ -1,7 +1,5 @@
-// Auto-detect environment based on extension installation method
-// (Unpacked extensions don't have an update_url)
-const isDev = !('update_url' in chrome.runtime.getManifest());
-const BACKEND_URL = isDev ? 'http://localhost:3000' : 'https://form-filling-agent.onrender.com';
+// Dynamic Backend URL
+let BACKEND_URL = 'https://form-filling-agent.onrender.com';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const statusBadge = document.getElementById('connection-status');
@@ -41,13 +39,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  // Health Check
+  // Health Check & Dynamic URL Routing
   async function checkBackend() {
     try {
+      // 1. Always check if local is alive first
+      const localRes = await fetch('http://localhost:3000/');
+      if (localRes.ok) {
+        BACKEND_URL = 'http://localhost:3000';
+      }
+    } catch (err) {
+      // 2. If local fails, fallback to production
+      BACKEND_URL = 'https://form-filling-agent.onrender.com';
+    }
+
+    try {
+      // 3. Verify the final selected backend
       const res = await fetch(`${BACKEND_URL}/`);
       if (res.ok) {
         statusBadge.className = 'status-badge connected';
-        statusText.textContent = 'ONLINE';
+        statusText.textContent = BACKEND_URL.includes('localhost') ? 'ONLINE (LOCAL)' : 'ONLINE (PROD)';
         fillBtn.disabled = false;
       } else { throw new Error(); }
     } catch (err) {
@@ -57,7 +67,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
   checkBackend();
-  setInterval(checkBackend, 10000);
+  setInterval(checkBackend, 5000); // Check every 5 seconds
 
   // Resume Upload
   resumeInput.addEventListener('change', async (e) => {
