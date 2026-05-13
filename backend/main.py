@@ -1,14 +1,7 @@
-from fastapi import FastAPI, UploadFile, File
-from fastapi.middleware.cors import CORSMiddleware
 import os
-import shutil
-from backend.src.ingestion import store_from_pdf, store_from_manual
-from backend.src.rag_retriever import retrieve_and_match, match_stateless
-from backend.src.form_filler import save_learned_answer
-from pydantic import BaseModel
 from dotenv import load_dotenv
 
-# Load environment variables
+# Load environment variables at the very beginning
 env_state = os.getenv('ENV_STATE', 'dev')
 if env_state == 'prod':
     dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env.production')
@@ -20,6 +13,14 @@ if not os.path.exists(dotenv_path):
     dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
 
 load_dotenv(dotenv_path=dotenv_path)
+
+from fastapi import FastAPI, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
+import shutil
+from backend.src.ingestion import store_from_pdf, store_from_manual
+from backend.src.rag_retriever import retrieve_and_match, match_stateless
+from backend.src.form_filler import save_learned_answer
+from pydantic import BaseModel
 
 app = FastAPI()
 

@@ -80,6 +80,45 @@ def save_learned_answer(field_name: str, value: str):
     except Exception as e:
         print(f"Error: Failed to save learned answers: {e}")
 
+def save_multiple_learned_answers(data: dict):
+    """Save multiple learned answers at once atomically."""
+    if not data:
+        return
+
+    answers = load_learned_answers()
+    changed = False
+    
+    for field, value in data.items():
+        if not field or value is None:
+            continue
+        clean_field = field.strip().lower()
+        clean_value = str(value).strip()
+        
+        if clean_field not in answers or answers[clean_field] != clean_value:
+            answers[clean_field] = clean_value
+            changed = True
+
+    if not changed:
+        return
+
+    os.makedirs(os.path.dirname(LEARNED_ANSWERS_PATH), exist_ok=True)
+    if os.path.exists(LEARNED_ANSWERS_PATH):
+        try:
+            shutil.copy2(LEARNED_ANSWERS_PATH, BACKUP_ANSWERS_PATH)
+        except:
+            pass
+
+    try:
+        fd, temp_path = tempfile.mkstemp(dir=os.path.dirname(LEARNED_ANSWERS_PATH), suffix=".tmp")
+        with os.fdopen(fd, 'w', encoding='utf-8') as tmp:
+            json.dump(answers, tmp, indent=2)
+            tmp.flush()
+            os.fsync(tmp.fileno())
+        os.replace(temp_path, LEARNED_ANSWERS_PATH)
+        print(f"Bulk saved {len(data)} fields to learned_answers.json")
+    except Exception as e:
+        print(f"Error in bulk save: {e}")
+
 def get_learned_answer(field_name: str) -> str | None:
     """Check for a learned answer for a field"""
     answers = load_learned_answers()

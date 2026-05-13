@@ -38,7 +38,12 @@ if (typeof window.autoFillAILoaded === 'undefined') {
     
     const clean = (text) => {
         if (!text) return '';
-        const t = text.replace(/^\d+\.\s*/, '').replace(/\s*\*$/, '').replace('Required', '').replace(':', '').trim();
+        // If multiline, usually the actual field name is the last line or first line.
+        // E.g. "Section 1 Basic Information\nSkipped\nFull Name" -> "Full Name"
+        let parts = text.split('\n').map(p => p.trim()).filter(p => p.length > 0 && p.toLowerCase() !== 'skipped' && p.toLowerCase() !== 'required');
+        let t = parts.length > 0 ? parts[parts.length - 1] : text;
+        
+        t = t.replace(/^\d+\.\s*/, '').replace(/\s*\*$/, '').replace('Required', '').replace(':', '').trim();
         return isValidFieldName(t) ? t : '';
     };
 
@@ -131,8 +136,10 @@ if (typeof window.autoFillAILoaded === 'undefined') {
 
     function addField(text, element = null, isPlaceholder = false) {
       if (!text) return null;
-      const cleanLabel = text.trim()
-        .replace('*', '')
+      let parts = text.split('\n').map(p => p.trim()).filter(p => p.length > 0 && p.toLowerCase() !== 'skipped' && p.toLowerCase() !== 'required');
+      let t = parts.length > 0 ? parts[parts.length - 1] : text;
+      
+      const cleanLabel = t.replace('*', '')
         .replace('Required', '')
         .replace(':', '')
         .replace(/^\d+\.\s*/, '')
@@ -204,9 +211,16 @@ if (typeof window.autoFillAILoaded === 'undefined') {
 
       let value = matchedData[label];
       if (!value) {
-        const key = Object.keys(matchedData).find(k => 
-          k.trim().toLowerCase() === label.toLowerCase() || label.toLowerCase().includes(k.toLowerCase())
-        );
+        // Advanced Fuzzy Search
+        const labelLower = label.toLowerCase().trim();
+        const key = Object.keys(matchedData).find(k => {
+          const kLower = k.toLowerCase().trim();
+          return kLower === labelLower || 
+                 labelLower.includes(kLower) || 
+                 kLower.includes(labelLower) ||
+                 labelLower.replace(/\s/g, '').includes(kLower.replace(/\s/g, '')) ||
+                 kLower.replace(/\s/g, '').includes(labelLower.replace(/\s/g, ''));
+        });
         if (key) value = matchedData[key];
       }
 

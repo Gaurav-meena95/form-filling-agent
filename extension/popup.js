@@ -1,5 +1,6 @@
 // PRODUCTION URL: This is where the extension talks to the AI
-const BACKEND_URL = 'https://form-filling-agent.onrender.com';
+// const BACKEND_URL = 'https://form-filling-agent.onrender.com';
+const BACKEND_URL = 'http://localhost:3000';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const statusBadge = document.getElementById('connection-status');

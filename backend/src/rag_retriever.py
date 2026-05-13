@@ -7,7 +7,16 @@ import os
 import json
 from backend.src.form_filler import load_learned_answers
 
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
+# Load environment variables
+dotenv_paths = [
+    os.path.join(os.path.dirname(__file__), '..', '..', '.env.development'),
+    os.path.join(os.path.dirname(__file__), '..', '..', '.env.production'),
+    os.path.join(os.path.dirname(__file__), '..', '..', '.env')
+]
+for path in dotenv_paths:
+    if os.path.exists(path):
+        load_dotenv(dotenv_path=path)
+        break
 
 # Database connection
 _base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -129,16 +138,40 @@ def retrieve_and_match(form_fields: list) -> dict:
     return matched
 
 def match_stateless(form_fields: list, profile_context: str, learned_context: str = "") -> dict:
-    """Stateless matching for production use"""
+    """Stateless matching for production use, but including local DB if available"""
     
-    # Load backend's learned answers
+    # 1. Start with Profile Context from Extension (Truncated to avoid token overflow)
+    if len(profile_context) > 2000:
+        profile_context = profile_context[:2000] + "..."
+    retrieved_chunks = [f"Manual Profile Data: {profile_context}"]
+    
+    # 2. Try to get data from ChromaDB (if any resume was uploaded)
+    try:
+        all_stored = collection.get()
+        all_docs = all_stored.get("documents", [])
+        if all_docs:
+            # ONLY TAKE THE LAST DOCUMENT to prevent token limit errors
+            latest_doc = all_docs[-1]
+            # Cap the length to roughly 3000 words to be safe
+            if len(latest_doc) > 10000:
+                latest_doc = latest_doc[:10000] + "..."
+            retrieved_chunks.append(f"Resume Data: {latest_doc}")
+    except Exception as e:
+        print(f"ChromaDB not available in stateless match: {e}")
+
+    # 3. Load backend's learned answers
     backend_learned = load_learned_answers()
     backend_learned_str = ""
     if backend_learned:
         backend_learned_str = "\n".join([f"- {f}: {v}" for f, v in backend_learned.items()])
+        if len(backend_learned_str) > 5000:
+            backend_learned_str = backend_learned_str[:5000] + "..."
 
-    final_context = f"Candidate Profile:\n{profile_context}"
+    final_context = "\n".join(retrieved_chunks)
     
+    # Truncate frontend learned context if it's too large
+    if len(learned_context) > 5000:
+        learned_context = learned_context[:5000] + "..."    
     if backend_learned_str or learned_context:
         final_context += "\n\n### USER'S PREVIOUSLY CORRECTED ANSWERS (HIGH PRIORITY):\n"
         if backend_learned_str:
@@ -147,8 +180,8 @@ def match_stateless(form_fields: list, profile_context: str, learned_context: st
             final_context += learned_context
 
     prompt = ChatPromptTemplate.from_template("""
-    You are an intelligent job application assistant. Match the candidate's profile with the form fields.
-    Use the provided candidate profile and high-priority corrected answers to accurately fill the form.
+    You are an expert job application assistant. Your task is to match the candidate's profile with the provided form fields.
+    Be extremely intelligent and flexible. Labels might have numbers (e.g. "1. Name"), extra text (e.g. "Full Name (as per adhaar)"), or different casing.
 
     CONTEXT:
     {relevant_info}
@@ -156,28 +189,75 @@ def match_stateless(form_fields: list, profile_context: str, learned_context: st
     FIELDS TO FILL:
     {fields}
 
-    RULES:
-    - "Email Id (RU domain)" = university email (.edu.in)
-    - "Enrollment No" = search for student ID or registration numbers
-    - "LeetCode Profile" = find LeetCode URL
-    - "CodeChef Profile" = find CodeChef URL
-    - "mid level and hard level problems solved" = search for problem counts in profile
-    - "DSA Knowledge" = Answer "Yes" if student has CS/IT background or skills.
-    - If no data is found, return null. Return ONLY valid JSON.
+    STRICT MATCHING RULES:
+    1. You MUST use the EXACT field names provided in the "FIELDS TO FILL" list as the keys in your JSON response. Do not shorten or clean the keys.
+    2. The JSON MUST BE FLAT. Do not use nested objects or categories. Every key must be at the root level.
+    3. If you see "Name" or "Full Name" or "Given Name" in a messy field string, use the candidate's full name.
+    4. If you see "City" or "Location", extract the city from the address.
+    5. For "CTC", "Salary", or "Expectations", if not specified, use "8-12 LPA".
+    6. For "GitHub", "LinkedIn", "Portfolio", extract the exact URL.
+    7. For multiline text/essays, write a professional 3-4 sentence paragraph.
+    8. If the context has a "PREVIOUSLY CORRECTED ANSWER" for a similar field, ALWAYS use it.
+    9. If you are 70% sure about a match, PROVIDE IT. Do not be overly cautious.
+    10. If no data is found at all, return null for that exact key.
+
+    Return ONLY a FLAT, valid JSON object with keys matching the input EXACTLY.
     """)
     
-    chain = prompt | llm
-    response = chain.invoke({
-        "relevant_info": final_context,
-        "fields": ", ".join(form_fields)
-    })
-    
+    # Check for API Key
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key:
+        print("ERROR: GROQ_API_KEY is missing! Cannot proceed.")
+        return {}
+
+    # Debug: Print the context being sent to AI
+    print(f"\n--- DEBUG: AI CONTEXT LENGTHS ---")
+    print(f"Profile Context len: {len(profile_context)}")
+    print(f"Resume Data len (chunks): {len(''.join(retrieved_chunks))}")
+    print(f"Backend Learned len: {len(backend_learned_str)}")
+    print(f"Frontend Learned len: {len(learned_context)}")
+    print(f"Total Context len: {len(final_context)}")
+    print(f"---------------------------------\n")
+    print(f"Fields to match: {form_fields}")
+    print("--- DEBUG: CALLING AI NOW (Waiting for Groq)... ---")
+
     try:
+        chain = prompt | llm
+        response = chain.invoke({
+            "relevant_info": final_context,
+            "fields": ", ".join(form_fields)
+        })
+        
+        print("--- DEBUG: AI RESPONDED! ---")
         raw = response.content.strip()
+        print(f"--- DEBUG: AI RAW RESPONSE ---\n{raw}\n------------------------------")
+
         start = raw.find("{")
         end = raw.rfind("}") + 1
+        if start == -1 or end == 0:
+            print("No JSON found in AI response.")
+            return {}
+        
         data = json.loads(raw[start:end])
-        return {k: v for k, v in data.items() if v is not None}
+        
+        # Flatten nested JSON just in case LLM disobeys rules
+        def extract_flat_kv(d):
+            flat = {}
+            if isinstance(d, dict):
+                for k, v in d.items():
+                    if isinstance(v, dict):
+                        flat.update(extract_flat_kv(v))
+                    else:
+                        flat[k] = v
+            return flat
+            
+        flat_data = extract_flat_kv(data)
+        matched = {k: v for k, v in flat_data.items() if v is not None}
+        print(f"Successfully matched {len(matched)} fields.")
+        return matched
+
     except Exception as e:
-        print(f"Error in stateless match: {e}")
+        print(f"!!! CRITICAL ERROR in match_stateless: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return {}

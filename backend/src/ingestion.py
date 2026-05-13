@@ -14,6 +14,17 @@ collection = client.get_or_create_collection(
     embedding_function=embedding_fn
 )
 
+from langchain_groq import ChatGroq
+from langchain_core.prompts import ChatPromptTemplate
+from backend.src.form_filler import save_multiple_learned_answers
+import json
+
+# Initialize LLM for extraction
+llm = ChatGroq(
+    api_key=os.getenv("GROQ_API_KEY"),
+    model="llama-3.3-70b-versatile"
+)
+
 def extract_text_from_pdf(pdf_path: str) -> str:
     """Extract all text from a PDF file"""
     reader = PdfReader(pdf_path)
@@ -22,22 +33,53 @@ def extract_text_from_pdf(pdf_path: str) -> str:
         text += page.extract_text()
     return text
 
+def extract_kv_from_text(text: str) -> dict:
+    """Use LLM to extract key-value pairs from resume text"""
+    prompt = ChatPromptTemplate.from_template("""
+    Extract key information from the following resume text as a JSON object.
+    Focus on common form fields like Name, Email, Phone, GitHub, LinkedIn, Portfolio, College, Degree, Graduation Year, Skills, and Experience Summary.
+    
+    Rules:
+    - Use clear, short keys (e.g., "Full Name", "Email", "Phone", "GitHub", "Skills")
+    - If a field is not found, do not include it.
+    - Return ONLY valid JSON.
+    
+    Resume Text:
+    {text}
+    """)
+    
+    chain = prompt | llm
+    try:
+        response = chain.invoke({"text": text})
+        raw = response.content.strip()
+        start = raw.find("{")
+        end = raw.rfind("}") + 1
+        return json.loads(raw[start:end])
+    except Exception as e:
+        print(f"Error extracting KV from PDF: {e}")
+        return {}
+
 def store_from_pdf(pdf_path: str):
-    """Extract text from PDF and ADD to existing ChromaDB - never delete old data"""
+    """Extract text from PDF and ADD to existing ChromaDB AND learned_answers.json"""
     print(f"Reading PDF: {pdf_path}")
     text = extract_text_from_pdf(pdf_path)
     
-    # Generate unique ID based on filename and timestamp
+    # 1. Store full text in ChromaDB
     import time
     file_id = f"resume_{os.path.basename(pdf_path)}_{int(time.time())}"
-    
-    # DON'T delete existing data - just add new resume
     collection.add(
         documents=[text],
         ids=[file_id],
         metadatas=[{"source": "pdf", "filename": os.path.basename(pdf_path)}]
     )
-    print(f"PDF content added to ChromaDB! Total documents: {collection.count()}")
+    print(f"PDF content added to ChromaDB.")
+
+    # 2. Extract and Store Key-Value pairs in JSON
+    print("Extracting Key-Value pairs for learned_answers.json...")
+    kv_data = extract_kv_from_text(text)
+    if kv_data:
+        save_multiple_learned_answers(kv_data)
+        print(f"Extracted and saved {len(kv_data)} fields from PDF.")
 
 def store_from_manual(profile_data: dict):
     """Store manually typed user profile in ChromaDB - never delete old data"""
