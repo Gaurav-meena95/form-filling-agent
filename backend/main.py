@@ -8,7 +8,18 @@ from backend.src.form_filler import save_learned_answer
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
+# Load environment variables
+env_state = os.getenv('ENV_STATE', 'dev')
+if env_state == 'prod':
+    dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env.production')
+else:
+    dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env.development')
+
+# Fallback to .env if specific file doesn't exist
+if not os.path.exists(dotenv_path):
+    dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
+
+load_dotenv(dotenv_path=dotenv_path)
 
 app = FastAPI()
 

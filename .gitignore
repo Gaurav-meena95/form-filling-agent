@@ -1,6 +1,7 @@
 .env
 .env.local
 .env.production
+.env.development
 venv/
 node_modules/
 backend/user_data/
