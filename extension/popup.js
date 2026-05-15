@@ -1,5 +1,9 @@
-// Dynamic Backend URL
-let BACKEND_URL = 'https://form-filling-agent.onrender.com';
+// Backend Configuration
+const BACKENDS = {
+  local: 'http://localhost:3000',
+  pro: 'https://form-filling-agent.onrender.com'
+};
+let BACKEND_URL = BACKENDS.pro;
 
 document.addEventListener('DOMContentLoaded', async () => {
   const statusBadge = document.getElementById('connection-status');
@@ -12,7 +16,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const fieldsList = document.getElementById('fields-list');
 
   // Load Saved Data
-  const saved = await chrome.storage.local.get(['profile', 'learnedAnswers', 'resumeText']);
+  const saved = await chrome.storage.local.get(['profile', 'learnedAnswers', 'resumeText', 'selectedEnv']);
+  let selectedEnv = saved.selectedEnv || 'pro';
 
   // Pre-fill Profile
   if (saved.profile) {
@@ -39,30 +44,41 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  // Health Check & Dynamic URL Routing
+  // Environment Switching
+  const envBtns = document.querySelectorAll('.env-btn');
+  
+  function updateEnvUI(env) {
+    envBtns.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.env === env);
+    });
+  }
+  
+  updateEnvUI(selectedEnv);
+
+  envBtns.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      selectedEnv = btn.dataset.env;
+      await chrome.storage.local.set({ selectedEnv });
+      updateEnvUI(selectedEnv);
+      checkBackend();
+    });
+  });
+
+  // Health Check & Backend Selection
   async function checkBackend() {
-    try {
-      // 1. Always check if local is alive first
-      const localRes = await fetch('http://localhost:3000/');
-      if (localRes.ok) {
-        BACKEND_URL = 'http://localhost:3000';
-      }
-    } catch (err) {
-      // 2. If local fails, fallback to production
-      BACKEND_URL = 'https://form-filling-agent.onrender.com';
-    }
+    BACKEND_URL = BACKENDS[selectedEnv];
 
     try {
-      // 3. Verify the final selected backend
+      // Verify the selected backend
       const res = await fetch(`${BACKEND_URL}/`);
       if (res.ok) {
         statusBadge.className = 'status-badge connected';
-        statusText.textContent = BACKEND_URL.includes('localhost') ? 'ONLINE (LOCAL)' : 'ONLINE (PROD)';
+        statusText.textContent = selectedEnv === 'local' ? 'ONLINE (LOCAL)' : 'ONLINE (PROD)';
         fillBtn.disabled = false;
       } else { throw new Error(); }
     } catch (err) {
       statusBadge.className = 'status-badge disconnected';
-      statusText.textContent = 'OFFLINE';
+      statusText.textContent = selectedEnv === 'local' ? 'LOCAL OFFLINE' : 'PROD OFFLINE';
       fillBtn.disabled = true;
     }
   }
