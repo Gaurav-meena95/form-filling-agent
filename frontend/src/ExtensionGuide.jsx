@@ -50,285 +50,100 @@ const BROWSERS = {
 };
 
 const STEPS = {
-  hinglish: {
-    chrome: [
-      {
-        num: 1, icon: 'Compass',
-        title: 'Extensions Page Kholein',
-        desc: 'Chrome ke address bar mein <code>chrome://extensions/</code> type karein aur Enter press karein. Ya fir Menu (⋮) → More Tools → Extensions par jayein.',
-        url: 'chrome://extensions/',
-        img: '/images/guide/chrome/step1.png',
-        color: '#4285f4',
-        gradient: 'linear-gradient(135deg, #4285f4, #06b6d4)',
-      },
-      {
-        num: 2, icon: 'Settings',
-        title: 'Developer Mode ON Karein',
-        desc: 'Extensions page ke <strong>top-right corner</strong> mein "Developer mode" toggle switch ko ON karein. Switch ON hone ke baad <em>Load unpacked</em> button appear hoga.',
-        img: '/images/guide/chrome/step2.png',
-        color: '#ea4335',
-        gradient: 'linear-gradient(135deg, #ea4335, #f97316)',
-      },
-      {
-        num: 3, icon: 'FolderOpen',
-        title: 'Load Unpacked Karein',
-        desc: '"<strong>Load unpacked</strong>" button click karein aur apni unzipped <code>extension/</code> folder select karein jisme <code>manifest.json</code> hai.',
-        img: '/images/guide/chrome/step3.png',
-        color: '#fbbc04',
-        gradient: 'linear-gradient(135deg, #fbbc04, #f97316)',
-      },
-      {
-        num: 4, icon: 'CheckCircle2',
-        title: 'Installation Complete!',
-        desc: 'Extension list mein <strong>AutoFill AI</strong> dikhega. Toggle switch enable karein aur toolbar mein puzzle icon (🧩) se pin kar lein.',
-        img: '/images/guide/chrome/step4.png',
-        color: '#34a853',
-        gradient: 'linear-gradient(135deg, #34a853, #06b6d4)',
-      },
-    ],
-    edge: [
-      {
-        num: 1, icon: 'Compass',
-        title: 'Extensions Page Kholein',
-        desc: 'Microsoft Edge ke address bar mein <code>edge://extensions/</code> type karke Enter press karein.',
-        url: 'edge://extensions/',
-        img: '/images/guide/edge/step1.png',
-        color: '#0078d4',
-        gradient: 'linear-gradient(135deg, #0078d4, #06b6d4)',
-      },
-      {
-        num: 2, icon: 'Settings',
-        title: 'Developer Mode ON Karein',
-        desc: 'Left sidebar ke <strong>bottom</strong> mein "Developer mode" toggle ko ON karein. "Allow extensions from other stores" bhi enable kar lein agar option aaye.',
-        img: '/images/guide/edge/step2.png',
-        color: '#00bcf2',
-        gradient: 'linear-gradient(135deg, #00bcf2, #0078d4)',
-      },
-      {
-        num: 3, icon: 'FolderOpen',
-        title: 'Load Unpacked Karein',
-        desc: '"<strong>Load unpacked</strong>" button click karein aur unzipped extension folder select karein.',
-        img: '/images/guide/edge/step3.png',
-        color: '#50e6ff',
-        gradient: 'linear-gradient(135deg, #50e6ff, #0078d4)',
-      },
-      {
-        num: 4, icon: 'CheckCircle2',
-        title: 'Installation Complete!',
-        desc: 'Extension ab Edge mein active hai. Toolbar ke puzzle icon se pin kar lein.',
-        img: '/images/guide/edge/step4.png',
-        color: '#00b7c3',
-        gradient: 'linear-gradient(135deg, #00b7c3, #0078d4)',
-      },
-    ],
-  },
-  hindi: {
-    chrome: [
-      {
-        num: 1, icon: 'Compass',
-        title: 'एक्सटेंशन पेज खोलें',
-        desc: 'Chrome के एड्रेस बार में <code>chrome://extensions/</code> टाइप करें और Enter दबाएं।',
-        url: 'chrome://extensions/',
-        img: '/images/guide/chrome/step1.png',
-        color: '#4285f4',
-        gradient: 'linear-gradient(135deg, #4285f4, #06b6d4)',
-      },
-      {
-        num: 2, icon: 'Settings',
-        title: 'डेवलपर मोड चालू करें',
-        desc: 'एक्सटेंशन पेज के <strong>ऊपर दाईं तरफ</strong> "Developer mode" टॉगल को ON करें।',
-        img: '/images/guide/chrome/step2.png',
-        color: '#ea4335',
-        gradient: 'linear-gradient(135deg, #ea4335, #f97316)',
-      },
-      {
-        num: 3, icon: 'FolderOpen',
-        title: 'अनपैक्ड लोड करें',
-        desc: '"<strong>Load unpacked</strong>" बटन दबाएं और अनज़िप की गई <code>extension/</code> फोल्डर चुनें।',
-        img: '/images/guide/chrome/step3.png',
-        color: '#fbbc04',
-        gradient: 'linear-gradient(135deg, #fbbc04, #f97316)',
-      },
-      {
-        num: 4, icon: 'CheckCircle2',
-        title: 'इंस्टॉलेशन पूर्ण!',
-        desc: '<strong>AutoFill AI</strong> एक्सटेंशन लिस्ट में दिखेगा। टूलबार में पिन करें और उपयोग शुरू करें।',
-        img: '/images/guide/chrome/step4.png',
-        color: '#34a853',
-        gradient: 'linear-gradient(135deg, #34a853, #06b6d4)',
-      },
-    ],
-    edge: [
-      {
-        num: 1, icon: 'Compass',
-        title: 'एक्सटेंशन पेज खोलें',
-        desc: 'Edge के एड्रेस बार में <code>edge://extensions/</code> टाइप करके Enter दबाएं।',
-        url: 'edge://extensions/',
-        img: '/images/guide/edge/step1.png',
-        color: '#0078d4',
-        gradient: 'linear-gradient(135deg, #0078d4, #06b6d4)',
-      },
-      {
-        num: 2, icon: 'Settings',
-        title: 'डेवलपर मोड चालू करें',
-        desc: 'बाएं साइडबार के <strong>नीचे</strong> "Developer mode" टॉगल को ON करें।',
-        img: '/images/guide/edge/step2.png',
-        color: '#00bcf2',
-        gradient: 'linear-gradient(135deg, #00bcf2, #0078d4)',
-      },
-      {
-        num: 3, icon: 'FolderOpen',
-        title: 'अनपैक्ड लोड करें',
-        desc: '"<strong>Load unpacked</strong>" बटन दबाएं और अनज़िप की गई फोल्डर चुनें।',
-        img: '/images/guide/edge/step3.png',
-        color: '#50e6ff',
-        gradient: 'linear-gradient(135deg, #50e6ff, #0078d4)',
-      },
-      {
-        num: 4, icon: 'CheckCircle2',
-        title: 'इंस्टॉलेशन पूर्ण!',
-        desc: 'एक्सटेंशन Edge में सक्रिय है। टूलबार में पिन करें।',
-        img: '/images/guide/edge/step4.png',
-        color: '#00b7c3',
-        gradient: 'linear-gradient(135deg, #00b7c3, #0078d4)',
-      },
-    ],
-  },
-  english: {
-    chrome: [
-      {
-        num: 1, icon: 'Compass',
-        title: 'Open Extensions Page',
-        desc: 'Type <code>chrome://extensions/</code> in Chrome\'s address bar and press Enter, or go to Menu (⋮) → More Tools → Extensions.',
-        url: 'chrome://extensions/',
-        img: '/images/guide/chrome/step1.png',
-        color: '#4285f4',
-        gradient: 'linear-gradient(135deg, #4285f4, #06b6d4)',
-      },
-      {
-        num: 2, icon: 'Settings',
-        title: 'Enable Developer Mode',
-        desc: 'Toggle the "<strong>Developer mode</strong>" switch in the <strong>top-right corner</strong> of the extensions page. This reveals the unpacked loading buttons.',
-        img: '/images/guide/chrome/step2.png',
-        color: '#ea4335',
-        gradient: 'linear-gradient(135deg, #ea4335, #f97316)',
-      },
-      {
-        num: 3, icon: 'FolderOpen',
-        title: 'Load Unpacked Extension',
-        desc: 'Click "<strong>Load unpacked</strong>" and select the unzipped <code>extension/</code> folder that contains your <code>manifest.json</code> file.',
-        img: '/images/guide/chrome/step3.png',
-        color: '#fbbc04',
-        gradient: 'linear-gradient(135deg, #fbbc04, #f97316)',
-      },
-      {
-        num: 4, icon: 'CheckCircle2',
-        title: 'Installation Complete!',
-        desc: '<strong>AutoFill AI</strong> will appear in your extensions list. Pin it from the puzzle icon (🧩) in the toolbar for one-click access.',
-        img: '/images/guide/chrome/step4.png',
-        color: '#34a853',
-        gradient: 'linear-gradient(135deg, #34a853, #06b6d4)',
-      },
-    ],
-    edge: [
-      {
-        num: 1, icon: 'Compass',
-        title: 'Open Extensions Page',
-        desc: 'Type <code>edge://extensions/</code> in Edge\'s address bar and press Enter.',
-        url: 'edge://extensions/',
-        img: '/images/guide/edge/step1.png',
-        color: '#0078d4',
-        gradient: 'linear-gradient(135deg, #0078d4, #06b6d4)',
-      },
-      {
-        num: 2, icon: 'Settings',
-        title: 'Enable Developer Mode',
-        desc: 'Toggle the "Developer mode" switch in the <strong>bottom-left corner</strong> of the left sidebar.',
-        img: '/images/guide/edge/step2.png',
-        color: '#00bcf2',
-        gradient: 'linear-gradient(135deg, #00bcf2, #0078d4)',
-      },
-      {
-        num: 3, icon: 'FolderOpen',
-        title: 'Load Unpacked Extension',
-        desc: 'Click "<strong>Load unpacked</strong>" and select your unzipped extension folder.',
-        img: '/images/guide/edge/step3.png',
-        color: '#50e6ff',
-        gradient: 'linear-gradient(135deg, #50e6ff, #0078d4)',
-      },
-      {
-        num: 4, icon: 'CheckCircle2',
-        title: 'Installation Complete!',
-        desc: 'Extension is now active in Edge. Pin it to your toolbar for quick access.',
-        img: '/images/guide/edge/step4.png',
-        color: '#00b7c3',
-        gradient: 'linear-gradient(135deg, #00b7c3, #0078d4)',
-      },
-    ],
-  },
+  chrome: [
+    {
+      num: 1, icon: 'Compass',
+      title: 'Open Extensions Page',
+      desc: 'Type <code>chrome://extensions/</code> in Chrome\'s address bar and press Enter, or go to Menu (⋮) → More Tools → Extensions.',
+      url: 'chrome://extensions/',
+      img: '/images/guide/chrome/step1.png',
+      color: '#4285f4',
+      gradient: 'linear-gradient(135deg, #4285f4, #06b6d4)',
+    },
+    {
+      num: 2, icon: 'Settings',
+      title: 'Enable Developer Mode',
+      desc: 'Toggle the "<strong>Developer mode</strong>" switch in the <strong>top-right corner</strong> of the extensions page. This reveals the unpacked loading buttons.',
+      img: '/images/guide/chrome/step2.png',
+      color: '#ea4335',
+      gradient: 'linear-gradient(135deg, #ea4335, #f97316)',
+    },
+    {
+      num: 3, icon: 'FolderOpen',
+      title: 'Load Unpacked Extension',
+      desc: 'Click "<strong>Load unpacked</strong>" and select the unzipped <code>extension/</code> folder that contains your <code>manifest.json</code> file.',
+      img: '/images/guide/chrome/step3.png',
+      color: '#fbbc04',
+      gradient: 'linear-gradient(135deg, #fbbc04, #f97316)',
+    },
+    {
+      num: 4, icon: 'CheckCircle2',
+      title: 'Installation Complete!',
+      desc: '<strong>AutoFill AI</strong> will appear in your extensions list. Pin it from the puzzle icon (🧩) in the toolbar for one-click access.',
+      img: '/images/guide/chrome/step4.png',
+      color: '#34a853',
+      gradient: 'linear-gradient(135deg, #34a853, #06b6d4)',
+    },
+  ],
+  edge: [
+    {
+      num: 1, icon: 'Compass',
+      title: 'Open Extensions Page',
+      desc: 'Type <code>edge://extensions/</code> in Edge\'s address bar and press Enter.',
+      url: 'edge://extensions/',
+      img: '/images/guide/edge/step1.png',
+      color: '#0078d4',
+      gradient: 'linear-gradient(135deg, #0078d4, #06b6d4)',
+    },
+    {
+      num: 2, icon: 'Settings',
+      title: 'Enable Developer Mode',
+      desc: 'Toggle the "Developer mode" switch in the <strong>bottom-left corner</strong> of the left sidebar.',
+      img: '/images/guide/edge/step2.png',
+      color: '#00bcf2',
+      gradient: 'linear-gradient(135deg, #00bcf2, #0078d4)',
+    },
+    {
+      num: 3, icon: 'FolderOpen',
+      title: 'Load Unpacked Extension',
+      desc: 'Click "<strong>Load unpacked</strong>" and select your unzipped extension folder.',
+      img: '/images/guide/edge/step3.png',
+      color: '#50e6ff',
+      gradient: 'linear-gradient(135deg, #50e6ff, #0078d4)',
+    },
+    {
+      num: 4, icon: 'CheckCircle2',
+      title: 'Installation Complete!',
+      desc: 'Extension is now active in Edge. Pin it to your toolbar for quick access.',
+      img: '/images/guide/edge/step4.png',
+      color: '#00b7c3',
+      gradient: 'linear-gradient(135deg, #00b7c3, #0078d4)',
+    },
+  ],
 };
 
-const FAQS = {
-  hinglish: [
-    {
-      q: '"Manifest file is missing" error kyu aata hai?',
-      a: 'Ye tab hota hai jab aap ZIP ke andar ka galat folder select karte hain. Pehle ZIP extract karein, phir wahi folder select karein jisme manifest.json directly ho.',
-    },
-    {
-      q: 'Kya Brave ya Opera browser mein kaam karega?',
-      a: 'Haan! Brave aur Opera Chromium-based hain. Brave mein brave://extensions/ open karein aur Chrome wale bilkul same steps follow karein.',
-    },
-    {
-      q: 'Install hone ke baad form kaise fill karein?',
-      a: 'Toolbar ke puzzle icon (🧩) par click karke AutoFill AI ko Pin karein. Fir kisi bhi job application form par jayein, extension icon click karein aur "Fill Form" dabayein!',
-    },
-    {
-      q: 'Browser restart ke baad warning kyun aati hai?',
-      a: 'Developer mode extensions ke liye Chrome/Edge warning dikhata hai. Ye completely normal hai — "Keep it" ya "Cancel" select karo aur extension active rahega.',
-    },
-  ],
-  hindi: [
-    {
-      q: '"Manifest file is missing" एरर क्यों आता है?',
-      a: 'जब गलत सब-फोल्डर चुना जाए। हमेशा वही फोल्डर चुनें जिसमें manifest.json हो।',
-    },
-    {
-      q: 'क्या यह Brave ब्राउज़र में चलेगा?',
-      a: 'हाँ! brave://extensions/ खोलें और Chrome वाले steps फॉलो करें।',
-    },
-    {
-      q: 'फॉर्म कैसे भरें?',
-      a: 'Puzzle icon से AutoFill AI पिन करें। किसी भी फॉर्म पर जाएं और "Fill Form" दबाएं।',
-    },
-    {
-      q: 'ब्राउज़र रीस्टार्ट पर चेतावनी क्यों आती है?',
-      a: 'यह डेवलपर मोड एक्सटेंशन के लिए सामान्य है। "Keep it" चुनें।',
-    },
-  ],
-  english: [
-    {
-      q: 'Why do I see "Manifest file is missing"?',
-      a: 'You selected the wrong folder. Extract the ZIP first, then pick the folder that directly contains manifest.json — not the parent ZIP folder.',
-    },
-    {
-      q: 'Does this work in Brave or Opera?',
-      a: 'Yes! All Chromium-based browsers support this. Open brave://extensions/ in Brave and follow the exact same Chrome steps.',
-    },
-    {
-      q: 'How do I fill a form after installing?',
-      a: 'Click the puzzle icon (🧩) in the toolbar, pin AutoFill AI, navigate to any job application form, and click "Fill Form".',
-    },
-    {
-      q: 'Why does Chrome show a warning after restart?',
-      a: 'This is normal for developer-mode extensions. Click "Cancel" or "Keep it" and the extension stays active — no issues.',
-    },
-  ],
-};
+const FAQS = [
+  {
+    q: 'Why do I see "Manifest file is missing"?',
+    a: 'You selected the wrong folder. Extract the ZIP first, then pick the folder that directly contains manifest.json — not the parent ZIP folder.',
+  },
+  {
+    q: 'Does this work in Brave or Opera?',
+    a: 'Yes! All Chromium-based browsers support this. Open brave://extensions/ in Brave and follow the exact same Chrome steps.',
+  },
+  {
+    q: 'How do I fill a form after installing?',
+    a: 'Click the puzzle icon (🧩) in the toolbar, pin AutoFill AI, navigate to any job application form, and click "Fill Form".',
+  },
+  {
+    q: 'Why does Chrome show a warning after restart?',
+    a: 'This is normal for developer-mode extensions. Click "Cancel" or "Keep it" and the extension stays active — no issues.',
+  },
+];
 
 /* ─── MAIN COMPONENT ─── */
 export default function ExtensionGuide({ onOpenAgent }) {
   const [browser, setBrowser] = useState('chrome');
-  const [lang, setLang] = useState('hinglish');
   const [copied, setCopied] = useState(false);
   const [activeFaq, setActiveFaq] = useState(null);
   const [done, setDone] = useState({ 1: false, 2: false, 3: false, 4: false });
@@ -341,8 +156,8 @@ export default function ExtensionGuide({ onOpenAgent }) {
     setTimeout(() => setCopied(false), 2200);
   };
 
-  const steps = STEPS[lang][browser];
-  const faqs = FAQS[lang];
+  const steps = STEPS[browser];
+  const faqs = FAQS;
   const completedCount = Object.values(done).filter(Boolean).length;
   const allDone = completedCount === 4;
 
@@ -374,7 +189,7 @@ export default function ExtensionGuide({ onOpenAgent }) {
           </p>
         </div>
 
-        {/* Right: progress ring + lang picker */}
+        {/* Right: progress ring + download button */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', flexWrap: 'wrap' }}>
           {/* Progress indicator */}
           <div style={{
@@ -396,22 +211,6 @@ export default function ExtensionGuide({ onOpenAgent }) {
             <span style={{ fontSize: '0.7rem', color: 'rgba(139,152,180,1)', marginLeft: 4, fontWeight: 700 }}>
               {completedCount}/4
             </span>
-          </div>
-
-          {/* Language switcher */}
-          <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.04)', padding: 4, borderRadius: 12, border: '1px solid rgba(255,255,255,0.07)' }}>
-            {[['hinglish','Hi'], ['hindi','हि'], ['english','En']].map(([key, lbl]) => (
-              <button key={key} onClick={() => setLang(key)} style={{
-                padding: '5px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
-                fontFamily: 'inherit', fontSize: '0.72rem', fontWeight: 700,
-                transition: 'all 0.2s ease',
-                background: lang === key ? 'linear-gradient(135deg, #7c3aed, #6366f1)' : 'transparent',
-                color: lang === key ? '#fff' : 'rgba(100,116,139,1)',
-                boxShadow: lang === key ? '0 2px 10px rgba(124,58,237,0.35)' : 'none',
-              }}>
-                {lbl}
-              </button>
-            ))}
           </div>
 
           {/* Download button */}
@@ -465,15 +264,10 @@ export default function ExtensionGuide({ onOpenAgent }) {
         </div>
         <div>
           <p style={{ fontWeight: 700, color: '#f1f5f9', marginBottom: '0.25rem', fontSize: '0.875rem' }}>
-            💡 {lang === 'hindi' ? 'इंस्टॉलेशन से पहले:' : 'Installation Se Pehle:' }
+            💡 Before Installation:
           </p>
           <p style={{ color: 'rgba(139,152,180,1)', fontSize: '0.82rem', lineHeight: 1.65 }}>
-            {lang === 'english'
-              ? 'Download the ZIP file below and extract (unzip) it first. You need the unzipped folder containing manifest.json to load the extension.'
-              : lang === 'hindi'
-              ? 'नीचे दिए ZIP को डाउनलोड करें और Extract करें। आपको manifest.json वाला folder चाहिए।'
-              : 'Niche diye ZIP ko download karke extract (unzip) kar lein. Aapko ek unzipped folder chahiye jisme manifest.json ho.'
-            }
+            Download the ZIP file below and extract (unzip) it first. You need the unzipped folder containing manifest.json to load the extension.
           </p>
         </div>
       </div>
@@ -624,17 +418,17 @@ export default function ExtensionGuide({ onOpenAgent }) {
             }}>🎉</div>
             <div>
               <p style={{ fontWeight: 800, color: '#34d399', marginBottom: 2 }}>
-                {lang === 'hindi' ? 'बधाई हो! सेटअप पूर्ण!' : lang === 'english' ? 'Setup Complete! 🚀' : 'Setup Complete Ho Gaya! 🚀'}
+                Setup Complete! 🚀
               </p>
               <p style={{ fontSize: '0.8rem', color: 'rgba(139,152,180,1)' }}>
-                {lang === 'english' ? 'Extension is live. Open any form and use AutoFill AI.' : 'Extension ready hai. Ab koi bhi form open karo!'}
+                Extension is live. Open any form and use AutoFill AI.
               </p>
             </div>
           </div>
           {onOpenAgent && (
             <button onClick={onOpenAgent} className="btn-primary" style={{ gap: 8 }}>
               <Zap size={15} />
-              {lang === 'english' ? 'Open Agent Dashboard' : 'Agent Dashboard Kholein'}
+              Open Agent Dashboard
             </button>
           )}
         </div>
@@ -655,15 +449,10 @@ export default function ExtensionGuide({ onOpenAgent }) {
         </div>
         <div>
           <p style={{ fontWeight: 700, color: '#f1f5f9', marginBottom: '0.25rem', fontSize: '0.875rem' }}>
-            ⚠️ {lang === 'hindi' ? 'महत्वपूर्ण:' : 'Important Note:'}
+            ⚠️ Important Note:
           </p>
           <p style={{ color: 'rgba(139,152,180,1)', fontSize: '0.82rem', lineHeight: 1.65 }}>
-            {lang === 'english'
-              ? 'Extensions installed in developer mode may show a warning after browser restart. This is completely normal — click "Cancel" or "Keep it" and your extension stays active.'
-              : lang === 'hindi'
-              ? 'डेवलपर मोड एक्सटेंशन ब्राउज़र रीस्टार्ट पर चेतावनी दिखा सकता है। "Cancel" या "Keep it" चुनें — यह सामान्य है।'
-              : 'Developer mode wali extensions browser restart hone ke baad warning dikha sakti hain. Ye completely normal hai — "Cancel" ya "Keep it" click karo.'
-            }
+            Extensions installed in developer mode may show a warning after browser restart. This is completely normal — click "Cancel" or "Keep it" and your extension stays active.
           </p>
         </div>
       </div>
@@ -678,13 +467,10 @@ export default function ExtensionGuide({ onOpenAgent }) {
         }}>
           <div>
             <p style={{ fontWeight: 800, color: '#f1f5f9', marginBottom: 3 }}>
-              {lang === 'english' ? 'Extension Installed?' : 'Extension Install Ho Gaya?'}
+              Extension Installed?
             </p>
             <p style={{ fontSize: '0.8rem', color: 'rgba(139,152,180,1)' }}>
-              {lang === 'english'
-                ? 'Open Agent Dashboard to sync your resume and start filling forms.'
-                : 'Agent Dashboard open karein aur resume sync karke form filling start karein!'
-              }
+              Open Agent Dashboard to sync your resume and start filling forms.
             </p>
           </div>
           <button onClick={onOpenAgent} className="btn-primary" style={{ gap: 8 }}>
@@ -705,10 +491,10 @@ export default function ExtensionGuide({ onOpenAgent }) {
           </div>
           <div>
             <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#f1f5f9', letterSpacing: '-0.02em' }}>
-              {lang === 'hindi' ? 'अक्सर पूछे जाने वाले प्रश्न' : 'Troubleshooting & FAQs'}
+              Troubleshooting & FAQs
             </h3>
             <p style={{ fontSize: '0.75rem', color: 'rgba(100,116,139,1)' }}>
-              {lang === 'english' ? 'Common issues and quick fixes' : 'Aam samasya aur unke quick solutions'}
+              Common issues and quick fixes
             </p>
           </div>
         </div>

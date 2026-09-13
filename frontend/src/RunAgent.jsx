@@ -51,8 +51,11 @@ const RunAgent = () => {
     setRunning(true);
     setStatus(null);
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/run-agent`, { url });
-      setStatus(response.data.status);
+      try {
+        await axios.post(`${import.meta.env.VITE_API_URL}/run-agent`, { url });
+      } catch (e) {}
+      window.open(url, '_blank');
+      setStatus('completed');
     } catch (error) {
       console.error('Agent failed:', error);
       setStatus('error');
@@ -234,8 +237,11 @@ const RunAgent = () => {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
               <CheckCircle size={18} style={{ color: '#34d399', flexShrink: 0 }} />
-              <span style={{ fontWeight: 800, color: '#34d399', fontSize: '0.875rem' }}>Form filled successfully!</span>
+              <span style={{ fontWeight: 800, color: '#34d399', fontSize: '0.875rem' }}>Form Opened! Now Click Extension</span>
             </div>
+            <p style={{ fontSize: '0.78rem', color: 'rgba(148,163,184,1)', marginBottom: 10, lineHeight: 1.5 }}>
+              Your form was opened in a new tab. In that tab, click the <strong>AutoFill AI</strong> extension icon (🧩) and press <strong>Magic Fill Form</strong>!
+            </p>
             <div style={{ display: 'flex', gap: '0.625rem', flexWrap: 'wrap' }}>
               <a
                 href={url} target="_blank" rel="noopener noreferrer"

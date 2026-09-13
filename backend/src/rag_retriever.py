@@ -28,10 +28,53 @@ collection = client.get_or_create_collection(
     embedding_function=embedding_fn
 )
 
-llm = ChatGroq(
-    api_key=os.getenv("GROQ_API_KEY"),
-    model="llama-3.3-70b-versatile"
-)
+def get_llm():
+    """Get working Groq model with fallback"""
+    api_key = os.getenv("GROQ_API_KEY")
+    model = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+    try:
+        return ChatGroq(
+            api_key=api_key,
+            model=model,
+            temperature=0.1
+        )
+    except Exception as e:
+        print(f"Warning: Primary model {model} failed, falling back to openai/gpt-oss-20b: {e}")
+        return ChatGroq(
+            api_key=api_key,
+            model="openai/gpt-oss-20b",
+            temperature=0.1
+        )
+
+llm = get_llm()
+
+def extract_json_from_response(raw: str) -> dict:
+    """Robustly extract JSON dictionary from LLM response"""
+    if not raw:
+        return {}
+    clean = raw.strip()
+    if "```" in clean:
+        lines = clean.splitlines()
+        filtered = [l for l in lines if not l.strip().startswith("```")]
+        clean = "\n".join(filtered).strip()
+    
+    start = clean.find("{")
+    end = clean.rfind("}") + 1
+    if start == -1 or end <= start:
+        print(f"Warning: No JSON object found in response: {clean[:200]}")
+        return {}
+    
+    json_str = clean[start:end]
+    try:
+        return json.loads(json_str)
+    except Exception:
+        import re
+        try:
+            sanitized = re.sub(r'[\x00-\x1f\x7f-\x9f]', ' ', json_str)
+            return json.loads(sanitized)
+        except Exception as err:
+            print(f"Failed to parse LLM JSON response: {err}")
+            return {}
 
 def retrieve_and_match(form_fields: list) -> dict:
     """Retrieve info from ChromaDB and match with form fields using LLM"""
@@ -113,37 +156,24 @@ def retrieve_and_match(form_fields: list) -> dict:
     }}
     """)
     
-    chain = prompt | llm
+    current_llm = get_llm()
+    chain = prompt | current_llm
     response = chain.invoke({
         "relevant_info": final_context,
         "fields": ", ".join(form_fields)
     })
     
-    # Parse JSON safely
-    raw = response.content.strip()
-    try:
-        start = raw.find("{")
-        end = raw.rfind("}") + 1
-        if start == -1 or end == 0:
-            print(f"Error: No JSON found in LLM response: {raw}")
-            return {}
-        data = json.loads(raw[start:end])
-    except Exception as e:
-        print(f"Failed to parse LLM response: {e}")
-        return {}
-    
-    # Remove null values - only keep matched fields
+    data = extract_json_from_response(response.content)
     matched = {k: v for k, v in data.items() if v is not None}
     print(f"Matched {len(matched)} fields successfully.")
-    
     return matched
 
 def match_stateless(form_fields: list, profile_context: str, learned_context: str = "") -> dict:
     """Stateless matching for production use, but including local DB if available"""
     
-    # 1. Start with Profile Context from Extension (Truncated to avoid token overflow)
-    if len(profile_context) > 2000:
-        profile_context = profile_context[:2000] + "..."
+    # 1. Start with Profile Context from Extension
+    if len(profile_context) > 10000:
+        profile_context = profile_context[:10000] + "..."
     retrieved_chunks = [f"Manual Profile Data: {profile_context}"]
     
     # 2. Try to get data from ChromaDB (if any resume was uploaded)
@@ -151,12 +181,11 @@ def match_stateless(form_fields: list, profile_context: str, learned_context: st
         all_stored = collection.get()
         all_docs = all_stored.get("documents", [])
         if all_docs:
-            # ONLY TAKE THE LAST DOCUMENT to prevent token limit errors
-            latest_doc = all_docs[-1]
-            # Cap the length to roughly 3000 words to be safe
-            if len(latest_doc) > 10000:
-                latest_doc = latest_doc[:10000] + "..."
-            retrieved_chunks.append(f"Resume Data: {latest_doc}")
+            for doc in all_docs[-3:]:
+                if doc:
+                    if len(doc) > 15000:
+                        doc = doc[:15000] + "..."
+                    retrieved_chunks.append(f"Resume Data: {doc}")
     except Exception as e:
         print(f"ChromaDB not available in stateless match: {e}")
 
@@ -165,14 +194,14 @@ def match_stateless(form_fields: list, profile_context: str, learned_context: st
     backend_learned_str = ""
     if backend_learned:
         backend_learned_str = "\n".join([f"- {f}: {v}" for f, v in backend_learned.items()])
-        if len(backend_learned_str) > 5000:
-            backend_learned_str = backend_learned_str[:5000] + "..."
+        if len(backend_learned_str) > 25000:
+            backend_learned_str = backend_learned_str[:25000] + "..."
 
     final_context = "\n".join(retrieved_chunks)
     
-    # Truncate frontend learned context if it's too large
-    if len(learned_context) > 5000:
-        learned_context = learned_context[:5000] + "..."    
+    # Append learned context
+    if len(learned_context) > 25000:
+        learned_context = learned_context[:25000] + "..."    
     if backend_learned_str or learned_context:
         final_context += "\n\n### USER'S PREVIOUSLY CORRECTED ANSWERS (HIGH PRIORITY):\n"
         if backend_learned_str:
@@ -211,35 +240,16 @@ def match_stateless(form_fields: list, profile_context: str, learned_context: st
         print("ERROR: GROQ_API_KEY is missing! Cannot proceed.")
         return {}
 
-    # Debug: Print the context being sent to AI
-    print(f"\n--- DEBUG: AI CONTEXT LENGTHS ---")
-    print(f"Profile Context len: {len(profile_context)}")
-    print(f"Resume Data len (chunks): {len(''.join(retrieved_chunks))}")
-    print(f"Backend Learned len: {len(backend_learned_str)}")
-    print(f"Frontend Learned len: {len(learned_context)}")
-    print(f"Total Context len: {len(final_context)}")
-    print(f"---------------------------------\n")
-    print(f"Fields to match: {form_fields}")
-    print("--- DEBUG: CALLING AI NOW (Waiting for Groq)... ---")
-
     try:
-        chain = prompt | llm
+        current_llm = get_llm()
+        chain = prompt | current_llm
         response = chain.invoke({
             "relevant_info": final_context,
             "fields": ", ".join(form_fields)
         })
         
-        print("--- DEBUG: AI RESPONDED! ---")
         raw = response.content.strip()
-        print(f"--- DEBUG: AI RAW RESPONSE ---\n{raw}\n------------------------------")
-
-        start = raw.find("{")
-        end = raw.rfind("}") + 1
-        if start == -1 or end == 0:
-            print("No JSON found in AI response.")
-            return {}
-        
-        data = json.loads(raw[start:end])
+        data = extract_json_from_response(raw)
         
         # Flatten nested JSON just in case LLM disobeys rules
         def extract_flat_kv(d):

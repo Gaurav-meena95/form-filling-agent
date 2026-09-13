@@ -19,8 +19,9 @@ from fastapi.middleware.cors import CORSMiddleware
 import shutil
 from backend.src.ingestion import store_from_pdf, store_from_manual
 from backend.src.rag_retriever import retrieve_and_match, match_stateless
-from backend.src.form_filler import save_learned_answer
+from backend.src.form_filler import save_learned_answer, save_multiple_learned_answers, load_learned_answers
 from pydantic import BaseModel
+from typing import Optional, Union
 
 app = FastAPI()
 
@@ -40,17 +41,43 @@ class MatchFieldsRequest(BaseModel):
     fields: list[str]
 
 class LearnRequest(BaseModel):
-    field: str
-    value: str
+    field: Optional[str] = None
+    value: Optional[str] = None
+    data: Optional[dict] = None
 
 class StatelessMatchRequest(BaseModel):
     fields: list[str]
     profile_context: str
     learned_context: str = ""
 
+class RunAgentRequest(BaseModel):
+    url: str
+
 @app.get("/")
 async def root():
-    return {"message": "AutoFill AI API is running"}
+    return {"message": "AutoFill AI API is running", "status": "online"}
+
+@app.get("/learned")
+async def get_all_learned():
+    """Return all learned answers from backend knowledge base"""
+    return load_learned_answers()
+
+@app.get("/browser-status")
+async def browser_status():
+    """Status endpoint for frontend dashboard"""
+    return {
+        "is_connected": True,
+        "mode": "live",
+        "message": "Chrome Extension is the active form filler"
+    }
+
+@app.post("/run-agent")
+async def run_agent(request: RunAgentRequest):
+    """Run agent endpoint for web dashboard"""
+    return {
+        "status": "completed",
+        "message": f"Form URL registered: {request.url}. Open the form in your browser and click 'Magic Fill Form' in the AutoFill AI extension!"
+    }
 
 @app.post("/upload-resume")
 async def upload_resume(file: UploadFile = File(...)):
@@ -58,16 +85,17 @@ async def upload_resume(file: UploadFile = File(...)):
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     
-    # Process PDF
+    # Process PDF into ChromaDB and extract learned fields
     store_from_pdf(file_path)
     
     return {"message": "Resume uploaded and processed successfully", "filename": file.filename}
 
 @app.post("/manual-profile")
 async def manual_profile(data: dict):
-    # Process manual profile
+    # Process manual profile into ChromaDB and learned_answers
     store_from_manual(data)
-    return {"message": "Manual profile stored successfully"}
+    save_multiple_learned_answers(data)
+    return {"message": "Manual profile stored and learned successfully"}
 
 @app.post("/match-fields")
 async def match_fields(request: MatchFieldsRequest):
@@ -88,11 +116,25 @@ async def match_fields_stateless(request: StatelessMatchRequest):
         return {"matched": {}, "error": str(e)}
 
 @app.post("/learn")
-async def learn_from_user(request: LearnRequest):
-    """Save user correction"""
+async def learn_from_user(request: Union[LearnRequest, dict]):
+    """Save user correction or multiple learned fields"""
     try:
-        save_learned_answer(request.field, request.value)
-        return {"status": "success"}
+        if isinstance(request, dict):
+            field = request.get("field")
+            value = request.get("value")
+            data = request.get("data")
+        else:
+            field = request.field
+            value = request.value
+            data = request.data
+            
+        if data and isinstance(data, dict):
+            save_multiple_learned_answers(data)
+            return {"status": "success", "count": len(data)}
+        elif field and value is not None:
+            save_learned_answer(field, value)
+            return {"status": "success", "field": field}
+        return {"status": "ignored", "message": "No valid field or data provided"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
         
