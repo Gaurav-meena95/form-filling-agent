@@ -7,7 +7,7 @@ if (typeof window.autoFillAILoaded === 'undefined') {
   // --- GLOBAL CONFIG & VALIDATION ---
   
   const INVALID_FIELD_NAMES = [
-    'single line text', 'multi line text', 'enter your answer',
+    'single line text', 'multi line text', 'enter your answer', 'your answer',
     'the value must be a number', 'other answer', 'other',
     'yes', 'no', 'enter your answer here', 'type your answer',
     'select an option', 'choose an option', 'mm/dd/yyyy',

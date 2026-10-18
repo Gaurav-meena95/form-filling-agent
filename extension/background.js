@@ -6,7 +6,7 @@ chrome.runtime.onInstalled.addListener(() => {
 async function getBackendUrl() {
   const { selectedEnv } = await chrome.storage.local.get('selectedEnv');
   if (selectedEnv === 'pro') {
-    return 'https://form-filling-agent-backend.onrender.com';
+    return 'https://form-filling-agent.onrender.com';
   }
   return 'http://localhost:3000';
 }

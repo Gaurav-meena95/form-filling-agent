@@ -1,7 +1,7 @@
 // Backend Configuration
 const BACKENDS = {
   local: 'http://localhost:3000',
-  pro: 'https://form-filling-agent-backend.onrender.com'
+  pro: 'https://form-filling-agent.onrender.com'
 };
 let BACKEND_URL = BACKENDS.local;
 
